@@ -1,0 +1,27 @@
+# Exemple pour la VM Docker du HomeLab.
+#   docker compose up -d --build
+# Le site est servi sur http://<ip-de-la-vm>:8080
+# Derrière Nginx Proxy Manager : créer un « Proxy Host » vers evann-portfolio:8080
+# (même réseau Docker) ou vers <ip-de-la-vm>:8080, et activer le certificat TLS côté NPM.
+services:
+  portfolio:
+    build: .
+    image: evann-portfolio:latest
+    container_name: evann-portfolio
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Décommentez pour rejoindre le réseau de Nginx Proxy Manager au lieu d'exposer le port :
+    # networks:
+    #   - npm_default
+
+# networks:
+#   npm_default:
+#     external: true

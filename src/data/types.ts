@@ -241,8 +241,10 @@ export interface HomeLab {
 }
 
 export interface ContactChannel {
-  id: "linkedin";
+  /** Ajouter un canal = ajouter une entrée dans `profile.contacts` (il apparaît partout). */
+  id: "linkedin" | "email" | "github" | "website";
   label: string;
+  /** `https://…` ou `mailto:…` : uniquement des valeurs réelles. */
   href: string;
   display: string;
 }

@@ -12,22 +12,25 @@ import { ActivePrompt, Pads } from "./Pads";
 import { Anomalies } from "./Anomalies";
 import { InteractionSystem } from "./InteractionSystem";
 import { PlayerController } from "../player/PlayerController";
+import { StaticBatch } from "./StaticBatch";
 
 export function World({ reducedMotion, quality, paused }: { reducedMotion: boolean; quality: "high" | "low"; paused: boolean }) {
   return (
     <>
       <Environment shadows={quality === "high"} />
-      <Island />
+      <StaticBatch>
+        <Island />
+        <ControlsBoard />
+        <IndexKiosk />
+        <Signpost />
+        <MissionSign />
+        <Bay reducedMotion={reducedMotion} />
+        <Desk />
+        <Cluster reducedMotion={reducedMotion} />
+        <Career />
+      </StaticBatch>
       <Letters />
       <PhysicsProps />
-      <ControlsBoard />
-      <IndexKiosk />
-      <Signpost />
-      <MissionSign />
-      <Bay reducedMotion={reducedMotion} />
-      <Desk />
-      <Cluster reducedMotion={reducedMotion} />
-      <Career />
       <Pads reducedMotion={reducedMotion} />
       <Anomalies reducedMotion={reducedMotion} quality={quality} />
       <ActivePrompt />

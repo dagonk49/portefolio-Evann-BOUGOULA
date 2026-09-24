@@ -8,7 +8,9 @@ export function SectionHeading({ id, index, title, lead }: { id: string; index: 
         {index}
       </p>
       <div>
-        <h2 id={id}>{title}</h2>
+        <h2 id={id} tabIndex={-1}>
+          {title}
+        </h2>
         {lead ? <p className="section-head__lead">{lead}</p> : null}
       </div>
     </header>

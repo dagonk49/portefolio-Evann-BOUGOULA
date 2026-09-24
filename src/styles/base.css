@@ -317,3 +317,25 @@ button {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.mode-switch__short {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .mode-switch {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.7rem 0.4rem 0.6rem;
+  }
+  .mode-switch__long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .mode-switch__short {
+    display: inline;
+  }
+}

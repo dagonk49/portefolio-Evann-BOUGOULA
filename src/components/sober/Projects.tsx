@@ -5,7 +5,6 @@ import { SectionHeading } from "./common";
 
 export function ProjectsSection() {
   const nf = projects.find((p) => p.id === "netforge")!;
-  const portfolio = projects.find((p) => p.id === "portfolio")!;
   return (
     <section className="section" aria-labelledby="projets">
       <SectionHeading id="projets" index="04" title="Projets" />
@@ -85,30 +84,76 @@ export function ProjectsSection() {
           ))}
         </ul>
 
+        {nf.links.length > 0 ? (
+          <ul className="tags" aria-label="Liens du projet">
+            {nf.links.map((l) => (
+              <li key={l.href}>
+                <a href={l.href} target="_blank" rel="noopener noreferrer">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
         <NetForgeDemo />
       </article>
 
-      <article id="projet-portfolio" tabIndex={-1} className="case case--secondary" aria-labelledby="projet-portfolio-title">
-        <header className="case__head">
-          <p className="case__kicker mono">{portfolio.kind}</p>
-          <h3 id="projet-portfolio-title" className="case__title case__title--small">
-            {portfolio.name}
-          </h3>
-          <p className="case__tagline">{portfolio.tagline}</p>
-        </header>
-        <div className="case__grid case__grid--2">
-          {portfolio.pillars.map((p) => (
-            <div key={p.id}>
-              <h4 className="case__label mono">{p.title}</h4>
-              <ul className="dash-list">
-                {p.points.map((pt) => (
-                  <li key={pt}>{pt}</li>
+      {projects
+        .filter((p) => p.id !== "netforge")
+        .map((p) => (
+          <article key={p.id} id={`projet-${p.id}`} tabIndex={-1} className="case case--secondary" aria-labelledby={`projet-${p.id}-title`}>
+            <header className="case__head">
+              <p className="case__kicker mono">
+                {p.kind}
+                {p.since ? ` · depuis ${formatMonth(p.since)}` : ""}
+              </p>
+              <h3 id={`projet-${p.id}-title`} className="case__title case__title--small">
+                {p.name}
+              </h3>
+              <p className="case__tagline">{p.tagline}</p>
+            </header>
+            {p.problem || p.solution ? (
+              <div className="case__grid case__grid--2">
+                {p.problem ? (
+                  <div>
+                    <h4 className="case__label mono">Le problème</h4>
+                    <p>{p.problem}</p>
+                  </div>
+                ) : null}
+                {p.solution ? (
+                  <div>
+                    <h4 className="case__label mono">La solution</h4>
+                    <p>{p.solution}</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            <div className="case__grid case__grid--2">
+              {p.pillars.map((pl) => (
+                <div key={pl.id}>
+                  <h4 className="case__label mono">{pl.title}</h4>
+                  <ul className="dash-list">
+                    {pl.points.map((pt) => (
+                      <li key={pt}>{pt}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            {p.links.length > 0 ? (
+              <ul className="tags" aria-label="Liens du projet">
+                {p.links.map((l) => (
+                  <li key={l.href}>
+                    <a href={l.href} target="_blank" rel="noopener noreferrer">
+                      {l.label}
+                    </a>
+                  </li>
                 ))}
               </ul>
-            </div>
-          ))}
-        </div>
-      </article>
+            ) : null}
+          </article>
+        ))}
     </section>
   );
 }

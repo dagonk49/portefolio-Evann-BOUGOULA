@@ -147,6 +147,17 @@ test.describe("lab 3D", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
+  test("perte du contexte WebGL : message clair et accès au mode sobre", async ({ page }) => {
+    await page.evaluate(() => {
+      const canvas = document.querySelector<HTMLCanvasElement>(".lab-root canvas")!;
+      const gl = (canvas.getContext("webgl2") ?? canvas.getContext("webgl")) as WebGLRenderingContext;
+      gl.getExtension("WEBGL_lose_context")!.loseContext();
+    });
+    await expect(page.getByText("Le contexte graphique a été perdu")).toBeVisible();
+    await page.locator(".lab-fatal").getByRole("button", { name: "Passer au mode sobre" }).click();
+    await expect(page.locator("#experiences")).toBeVisible();
+  });
+
   test("quitter le lab libère la scène", async ({ page }) => {
     await page.locator(".mode-switch").click();
     await expect(page.locator(".lab-root")).toHaveCount(0);

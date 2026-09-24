@@ -15,7 +15,8 @@ function MissionTracker() {
   const mission = useApp((s) => s.progress.mission);
   const hints = useApp((s) => s.progress.hints);
   const revealHint = useApp((s) => s.revealHint);
-  const [open, setOpen] = useState(true);
+  // Replié par défaut sur petit écran pour laisser la place à la scène et aux contrôles tactiles.
+  const [open, setOpen] = useState(() => !window.matchMedia("(max-width: 720px), (pointer: coarse)").matches);
   const step = currentStep(lab, mission);
   const done = stepCompletion(lab, mission);
   const count = MISSION_STEPS.filter((s) => done[s.id]).length;

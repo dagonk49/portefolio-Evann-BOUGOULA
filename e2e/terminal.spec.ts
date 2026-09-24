@@ -79,6 +79,21 @@ test.describe("terminal du mode sobre", () => {
     }
   });
 
+  test("réduction des mouvements : effets visuels désactivés par défaut", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await expect(page.locator(".terminal__fx-toggle")).toHaveAttribute("aria-pressed", "false");
+    const box = page.getByLabel("Saisir une commande");
+    await box.fill("minecraft");
+    await box.press("Enter");
+    await expect(page.locator(".terminal__log")).toContainText("Minecraft");
+    await expect(page.locator(".egg")).toHaveCount(0);
+    await page.locator(".terminal__fx-toggle").click();
+    await box.fill("valorant");
+    await box.press("Enter");
+    await expect(page.locator(".egg--valorant")).toHaveCount(1);
+  });
+
   test("cv sans fichier : proposition d'impression", async ({ page }) => {
     const box = input(page);
     await box.fill("cv");

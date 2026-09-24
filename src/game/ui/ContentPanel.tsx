@@ -287,16 +287,21 @@ function AboutBody() {
 
 function ContactBody() {
   const setMode = useApp((s) => s.setMode);
-  const linkedin = profile.contacts.find((c) => c.id === "linkedin");
   return (
     <>
-      <p className="lab-lead">Pour échanger sur une alternance, un stage ou un projet d&apos;infrastructure, écrivez-moi sur LinkedIn.</p>
-      {linkedin ? (
-        <a className="lab-btn lab-btn--primary" href={linkedin.href} target="_blank" rel="noopener noreferrer">
-          LinkedIn — {linkedin.display}
-          <span className="sr-only"> (nouvel onglet)</span>
-        </a>
-      ) : null}
+      <p className="lab-lead">
+        Pour échanger sur une alternance, un stage ou un projet d&apos;infrastructure, écrivez-moi
+        {profile.contacts.length === 1 ? ` sur ${profile.contacts[0]!.label}` : ""}.
+      </p>
+      {profile.contacts.map((c) => {
+        const external = c.href.startsWith("http");
+        return (
+          <a key={c.id} className="lab-btn lab-btn--primary" href={c.href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+            {c.label} — {c.display}
+            {external ? <span className="sr-only"> (nouvel onglet)</span> : null}
+          </a>
+        );
+      })}
       <button
         type="button"
         className="lab-btn"
@@ -343,7 +348,7 @@ export function ContentPanel({ refTo, anomalyId, onClose }: { refTo: ContentRef;
       case "skill-family":
         return <SkillFamilyBody id={refTo.id} />;
       case "project":
-        return refTo.id === "netforge" ? <NetForgeBody /> : <PortfolioBody />;
+        return refTo.id === "netforge" ? <NetForgeBody /> : <ProjectBody id={refTo.id} />;
       case "homelab":
         return <HomeLabBody />;
       case "about":
@@ -383,17 +388,31 @@ export function ContentPanel({ refTo, anomalyId, onClose }: { refTo: ContentRef;
   );
 }
 
-function PortfolioBody() {
-  const p = getProject("portfolio")!;
+function ProjectBody({ id }: { id: Parameters<typeof getProject>[0] }) {
+  const p = getProject(id);
+  if (!p) return null;
   return (
     <>
+      <p className="lab-meta lab-mono">
+        {p.kind}
+        {p.since ? ` · depuis ${formatMonth(p.since)}` : ""}
+      </p>
       <p className="lab-lead">{p.tagline}</p>
+      {p.problem ? <p>{p.problem}</p> : null}
+      {p.solution ? <p>{p.solution}</p> : null}
       {p.pillars.map((pl) => (
         <div key={pl.id}>
           <h3 className="lab-h3">{pl.title}</h3>
           <ul className="lab-list">{pl.points.map((pt) => <li key={pt}>{pt}</li>)}</ul>
         </div>
       ))}
+      {p.links.map((l) => (
+        <a key={l.href} className="lab-btn" href={l.href} target="_blank" rel="noopener noreferrer">
+          {l.label}
+          <span className="sr-only"> (nouvel onglet)</span>
+        </a>
+      ))}
+      <SkillChips ids={p.skills} />
     </>
   );
 }

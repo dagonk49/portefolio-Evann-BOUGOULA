@@ -295,7 +295,9 @@ export function Desk() {
         <Glow p={[0, 0.02, 0.21]} s={[0.5, 0.02, 0.02]} color="amber" />
       </group>
 
-      <DeskChair p={[x - 0.3, 0, z + 1.0]} />
+      <group userData={{ noBatch: true }}>
+        <DeskChair p={[x - 0.3, 0, z + 1.0]} />
+      </group>
 
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[1.3, top / 2, 0.46]} position={[x, top / 2, z]} />

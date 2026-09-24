@@ -79,18 +79,25 @@ export function EducationSection() {
 }
 
 export function ContactSection() {
-  const linkedin = profile.contacts.find((c) => c.id === "linkedin");
   return (
     <section className="section" aria-labelledby="contact">
-      <SectionHeading id="contact" index="07" title="Contact" lead="Pour échanger sur une alternance, un stage ou un projet d'infrastructure, écrivez-moi sur LinkedIn." />
+      <SectionHeading id="contact" index="07" title="Contact" lead={`Pour échanger sur une alternance, un stage ou un projet d'infrastructure, écrivez-moi${profile.contacts.length === 1 ? ` sur ${profile.contacts[0]!.label}` : ""}.`} />
       <div className="contact">
-        {linkedin ? (
-          <a className="contact__link" href={linkedin.href} target="_blank" rel="noopener noreferrer">
-            <span className="contact__label mono">LinkedIn</span>
-            <span className="contact__value">{linkedin.display}</span>
-            <span className="sr-only"> (ouvre un nouvel onglet)</span>
-          </a>
-        ) : null}
+        {profile.contacts.map((c) => {
+          const external = c.href.startsWith("http");
+          return (
+            <a
+              key={c.id}
+              className="contact__link"
+              href={c.href}
+              {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            >
+              <span className="contact__label mono">{c.label}</span>
+              <span className="contact__value">{c.display}</span>
+              {external ? <span className="sr-only"> (ouvre un nouvel onglet)</span> : null}
+            </a>
+          );
+        })}
         <div className="contact__print">
           {profile.cvFile ? (
             <a className="btn btn--ghost" href={profile.cvFile} download>

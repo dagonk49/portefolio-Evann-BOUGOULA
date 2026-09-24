@@ -1311,6 +1311,9 @@
 }
 
 @media (max-width: 720px) {
+  .hud-welcome {
+    top: 7.2rem;
+  }
   .hud-top {
     right: max(0.75rem, env(safe-area-inset-right));
     top: 3.6rem;

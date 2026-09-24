@@ -80,7 +80,7 @@ function Port({ id }: { id: EndpointId }) {
   const [hover, setHover] = useState(false);
   const selectable = ENDPOINT_BY_ID[id].selectable;
   return (
-    <group position={[def.x, def.y, FRONT + 0.004]}>
+    <group position={[def.x, def.y, FRONT + 0.004]} userData={{ noBatch: true }}>
       <mesh
         geometry={unitBox()}
         material={mat(def.kind === "sfp" ? "#0c0e10" : "#101214", { roughness: 0.5 })}

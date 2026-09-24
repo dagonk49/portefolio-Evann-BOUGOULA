@@ -15,7 +15,10 @@ export function ModeSwitch() {
     return (
       <button type="button" className="mode-switch mode-switch--lab" onClick={() => setMode("sober")}>
         <span className="mode-switch__dot" aria-hidden="true" />
-        Passer au mode sobre
+        <span className="mode-switch__long">Passer au mode sobre</span>
+        <span className="mode-switch__short" aria-hidden="true">
+          Mode sobre
+        </span>
       </button>
     );
   }
@@ -28,7 +31,10 @@ export function ModeSwitch() {
       title={webgl ? undefined : "WebGL indisponible sur ce navigateur"}
     >
       <span className="mode-switch__dot" aria-hidden="true" />
-      {webgl ? "Explorer le lab (3D)" : "Lab 3D indisponible"}
+      <span className="mode-switch__long">{webgl ? "Explorer le lab (3D)" : "Lab 3D indisponible"}</span>
+      <span className="mode-switch__short" aria-hidden="true">
+        {webgl ? "Lab 3D" : "3D indisponible"}
+      </span>
     </button>
   );
 }

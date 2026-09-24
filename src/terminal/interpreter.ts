@@ -216,8 +216,8 @@ const COMMANDS: CommandDef[] = [
     description: "comment me contacter",
     run: () =>
       out([
-        line("Le plus simple pour me contacter : LinkedIn."),
-        linkedin ? line(t("  LinkedIn : "), { kind: "link", text: linkedin.display, href: linkedin.href }) : blank,
+        line(profile.contacts.length === 1 ? `Le plus simple pour me contacter : ${profile.contacts[0]!.label}.` : "Pour me contacter :"),
+        ...profile.contacts.map((c) => line(t(`  ${c.label} : `), { kind: "link", text: c.display, href: c.href })),
       ]),
   },
   {
