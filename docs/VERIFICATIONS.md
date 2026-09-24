@@ -11,7 +11,7 @@ Date : septembre 2026.
 | Tests unitaires | `npm test` (Vitest) | **58 tests / 7 fichiers OK** |
 | Build | `npm run build` (Next.js 16, export statique) | OK, page `/` pré-rendue en HTML |
 | Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **21 tests OK** |
-| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre | 0 violation « serious » ou « critical » |
+| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre, thèmes clair et sombre | 0 violation « serious » ou « critical » (clair) ; 0 violation (sombre) |
 | CSP | Console du navigateur, lab lancé, en-têtes de `deploy/` | Aucune violation (après ajout de `blob:` pour le worker du texte 3D) |
 | Image Docker | Build + `docker run --read-only --tmpfs /tmp --cap-drop ALL` | OK : 200 sur `/`, 404 personnalisée, en-têtes de sécurité, gzip, cache immuable sur `/_next/static/` |
 | E2E contre nginx | Sous-ensemble (parcours sobre, axe, mission complète) sur le conteneur | OK |
