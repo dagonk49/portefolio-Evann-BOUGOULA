@@ -197,7 +197,7 @@ export const ANOMALY_PLACEMENTS: Record<AnomalyId, { float: Vec3; ground: Vec3; 
   "evann.xp.net4business-2024.wifi": { float: [-20.6, 2.6, 14.3], ground: [-19.2, PLATFORMS.bay.top, 13.9] },
   "evann.skills.systems": { float: [-18.2, 2.3, -5.3], ground: [-16.9, PLATFORMS.cluster.top, -5.8] },
   "evann.xp.net4business-2025.proxmox": { float: [-18.2, 2.3, -13.6], ground: [-16.9, PLATFORMS.cluster.top, -13.0] },
-  "evann.projects.netforge": { float: [11.9, 1.95, -21.3], ground: [12.3, 0, -19.5] },
+  "evann.projects.netforge": { float: [12.2, 2.55, -22.5], ground: [12.3, 0, -19.5] },
   "evann.xp.net4business-2026.ventoy": { float: [14.0, 1.6, -22.2], ground: [14.1, 0, -20.0] },
   "evann.skills.development": { float: [15.0, 1.65, -16.4], ground: [13.8, 0, -16.2] },
   "evann.skills.method": { float: [12.9, 1.55, -13.0], ground: [12.2, 0, -11.9] },

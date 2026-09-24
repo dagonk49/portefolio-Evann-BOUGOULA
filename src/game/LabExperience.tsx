@@ -35,6 +35,7 @@ declare global {
       player: () => [number, number, number];
       teleport: (x: number, z: number) => void;
       interact: (id: string) => void;
+      stats: () => { calls: number; triangles: number; geometries: number; textures: number } | null;
       state: () => { active: string | null; panel: string | null; zone: string };
     };
   }
@@ -53,6 +54,7 @@ export default function LabExperience() {
   const [contextLost, setContextLost] = useState(false);
   const [downgraded, setDowngraded] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const coarse = useMemo(() => hasCoarsePointer(), []);
   const reducedMotion = useMemo(() => prefersReducedMotion(), []) || effects === false;
   const high = quality === "high";
@@ -98,6 +100,11 @@ export default function LabExperience() {
         player.teleport = new THREE.Vector3(x, 1.4, z);
       },
       interact: (id) => interactWith(id),
+      stats: () => {
+        const gl = glRef.current;
+        if (!gl) return null;
+        return { calls: gl.info.render.calls, triangles: gl.info.render.triangles, geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
+      },
       state: () => {
         const s = useLabUi.getState();
         return { active: s.active, panel: s.panel?.kind ?? null, zone: s.zone };
@@ -152,6 +159,7 @@ export default function LabExperience() {
           camera={{ fov: 32, near: 0.5, far: 180, position: [20, 18, 20] }}
           gl={{ antialias: high, powerPreference: "high-performance", preserveDrawingBuffer: false }}
           onCreated={({ gl }) => {
+            glRef.current = gl;
             gl.domElement.addEventListener("webglcontextlost", (e) => {
               // Le démontage volontaire (sortie du lab, changement de qualité) libère aussi le contexte :
               // on n'affiche l'erreur que si le canvas est toujours dans la page.
@@ -165,7 +173,9 @@ export default function LabExperience() {
           <Suspense fallback={null}>
             <Physics gravity={[0, -18, 0]} paused={paused} timeStep={1 / 60}>
               <PhysicsReady onReady={() => setReady(true)} />
-              <World reducedMotion={reducedMotion} quality={quality} paused={paused} />
+              <Suspense fallback={null}>
+                <World reducedMotion={reducedMotion} quality={quality} paused={paused} />
+              </Suspense>
             </Physics>
           </Suspense>
           <CameraRig reducedMotion={reducedMotion} />

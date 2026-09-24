@@ -123,7 +123,7 @@ export function NetForgeDemo() {
                   {result.normalizedFrom} a été ramené à l&apos;adresse de réseau {formatIPv4(result.parent.network)}/{result.parent.prefix}.
                 </p>
               ) : null}
-              <div className="table-wrap">
+              <div className="table-wrap" tabIndex={0} role="region" aria-label="Résultat du découpage VLSM">
                 <table className="demo__table">
                   <thead>
                     <tr>

@@ -367,7 +367,7 @@ function DiagTab() {
       {lastReport ? <ReportView report={lastReport} /> : <p className="lab-muted">Le diagnostic teste la liaison, l&apos;adresse, le serveur, la passerelle et un autre réseau.</p>}
       <MiniConsole
         title="Terminal de PC-LAB"
-        prompt="C:\\>"
+        prompt={"C:\\>"}
         help={`Commandes : ${PC_COMMANDS.map((c) => c.usage).join(", ")}`}
         run={(cmd) => {
           const result = runPcCommand(useApp.getState().progress.lab, cmd);

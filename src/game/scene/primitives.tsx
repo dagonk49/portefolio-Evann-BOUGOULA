@@ -1,6 +1,6 @@
 "use client";
 import { Text } from "@react-three/drei";
-import type { ComponentProps } from "react";
+import { Suspense, type ComponentProps } from "react";
 import * as THREE from "three";
 import { FONT_MONO, FONT_SANS, glow, mat, unitBox, type PaletteKey } from "../materials";
 import type { Vec3 } from "../layout";
@@ -42,11 +42,17 @@ export function Glow({ p, s, color = "cyan", r }: { p: Vec3; s: Vec3; color?: Pa
 
 type TextProps = Omit<ComponentProps<typeof Text>, "font"> & { mono?: boolean };
 
-/** Texte 3D net (SDF) avec les polices locales du site. */
+/**
+ * Texte 3D net (SDF) avec les polices locales du site. Chaque texte a sa
+ * propre frontière Suspense : un souci de police ne bloque jamais le reste
+ * de la scène (sol, colliders, joueur).
+ */
 export function Label({ mono = false, children, ...rest }: TextProps) {
   return (
-    <Text font={mono ? FONT_MONO : FONT_SANS} anchorX="center" anchorY="middle" {...rest}>
-      {children}
-    </Text>
+    <Suspense fallback={null}>
+      <Text font={mono ? FONT_MONO : FONT_SANS} anchorX="center" anchorY="middle" {...rest}>
+        {children}
+      </Text>
+    </Suspense>
   );
 }

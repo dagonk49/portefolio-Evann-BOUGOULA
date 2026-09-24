@@ -142,6 +142,7 @@ export function Terminal() {
         role="log"
         aria-live="polite"
         aria-label="Sortie du terminal"
+        tabIndex={0}
         onMouseUp={(e) => {
           const target = e.target as HTMLElement;
           if (target.closest("a,button") || window.getSelection()?.toString()) return;

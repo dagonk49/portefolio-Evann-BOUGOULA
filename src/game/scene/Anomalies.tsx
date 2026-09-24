@@ -50,6 +50,7 @@ function AnomalyObject({ def, reducedMotion, quality }: { def: AnomalyDef; reduc
   const ring = useRef<THREE.Group>(null);
   const flash = useRef<THREE.Mesh>(null);
   const appear = useRef(def.revealedBy ? 0 : 1);
+  const clear = useRef(1);
   const gather = useRef(0);
   const particles = useParticles();
   const pMat = useMemo(() => particleMaterial(PALETTE.cyan), []);
@@ -78,7 +79,17 @@ function AnomalyObject({ def, reducedMotion, quality }: { def: AnomalyDef; reduc
     const g = root.current;
     if (!g) return;
     appear.current = Math.min(1, appear.current + dt * (reducedMotion ? 10 : 0.9));
-    const s = THREE.MathUtils.smoothstep(appear.current, 0, 1);
+    // Une fiche cadre un autre objet tout proche : l'anomalie s'efface pour ne pas masquer la vue.
+    const ui = useLabUi.getState();
+    const f = ui.focus;
+    const hide =
+      !!f &&
+      ui.panel !== null &&
+      !(ui.panel.kind === "content" && ui.panel.anomalyId === def.id) &&
+      Math.hypot(f.target[0] - placement.float[0], f.target[2] - placement.float[2]) < 3.4;
+    clear.current += ((hide ? 0 : 1) - clear.current) * (1 - Math.exp(-8 * dt));
+    const s = THREE.MathUtils.smoothstep(appear.current, 0, 1) * clear.current;
+    g.visible = s > 0.02;
     g.scale.setScalar(Math.max(0.001, s));
     const bob = reducedMotion || viewed ? 0 : Math.sin(t * 0.9 + placement.float[0]) * 0.06;
     g.position.set(placement.float[0], placement.float[1] + bob, placement.float[2]);

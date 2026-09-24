@@ -34,7 +34,8 @@ export function Dialog({
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const node = ref.current;
-    const first = node?.querySelector<HTMLElement>("[data-autofocus]") ?? node?.querySelector<HTMLElement>(FOCUSABLE);
+    // Focus sur l'action principale si elle est désignée, sinon sur la fenêtre (son titre est annoncé).
+    const first = node?.querySelector<HTMLElement>("[data-autofocus]");
     (first ?? node)?.focus({ preventScroll: true });
 
     const onKey = (e: KeyboardEvent) => {
