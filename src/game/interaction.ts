@@ -1,12 +1,13 @@
 /**
- * Règles d'interaction du lab, indépendantes du rendu : quels points
+ * Règles d'interaction des mondes 3D, indépendantes du rendu : quels points
  * d'intérêt existent, lequel est actif selon la position du joueur, dans
  * quelle zone il se trouve.
  */
 import { anomalies } from "@/data/anomalies";
-import type { AnomalyId } from "@/data/types";
+import type { AnomalyId, WorldId } from "@/data/types";
 import type { MissionFlags } from "@/sim/mission";
 import { anomalyInteractable, INTERACTABLES, ZONES, type Interactable } from "./layout";
+import { CIRCUIT_INTERACTABLES, circuitZoneAt } from "./circuit/layout";
 
 /** Une anomalie « révélée par une interaction » n'existe qu'après celle-ci. */
 export function anomalyVisible(id: AnomalyId, mission: MissionFlags): boolean {
@@ -16,11 +17,21 @@ export function anomalyVisible(id: AnomalyId, mission: MissionFlags): boolean {
   return true;
 }
 
-export function availableInteractables(mission: MissionFlags): Interactable[] {
-  const list = [...INTERACTABLES];
-  for (const a of anomalies) {
+/** Anomalies d'un monde, dans l'ordre des données. */
+export function anomaliesOf(world: WorldId) {
+  return anomalies.filter((a) => a.world === world);
+}
+
+/**
+ * Points d'intérêt d'un monde. `extra` accueille les interactables mobiles
+ * (véhicules garés), dont la position change pendant la partie.
+ */
+export function availableInteractables(mission: MissionFlags, world: WorldId = "lab", extra: Interactable[] = []): Interactable[] {
+  const list = world === "lab" ? [...INTERACTABLES] : [...CIRCUIT_INTERACTABLES];
+  for (const a of anomaliesOf(world)) {
     if (anomalyVisible(a.id, mission)) list.push(anomalyInteractable(a.id, `Anomalie ${a.id}`, a.zone));
   }
+  list.push(...extra);
   return list;
 }
 
@@ -55,7 +66,8 @@ export function pickActive(
   return best?.id ?? null;
 }
 
-export function zoneNameAt(x: number, z: number): string {
+export function zoneNameAt(x: number, z: number, world: WorldId = "lab"): string {
+  if (world === "circuit") return circuitZoneAt(x, z);
   let best = "Lab";
   let bestScore = Infinity;
   for (const zone of ZONES) {

@@ -66,13 +66,30 @@ il ne change jamais tout seul avec la date.
    `value`, `illustrates`, `links`). Les `links` n'acceptent que des URL réelles et publiques.
 3. Le projet apparaît dans la section Projets, l'index du lab et la commande `projects`.
 
-## Ajouter une anomalie dans le lab
+### NetForge : lien, badges, aperçu
+
+- `src/data/projects.ts` → `netforge.liveUrl` (adresse de production), `links` (bouton d'accès) et `badges`
+  (« Outil en ligne », « IPAM », « Cisco CLI », « VLSM »). Le libellé du bouton est construit à partir du domaine de `liveUrl`.
+- La carte est le composant `src/components/NetForgeLaunch.tsx` (mode sobre et fiche du lab). La maquette reprend les titres
+  des quatre piliers. Si le domaine change, mettez aussi à jour `frame-src` dans `deploy/security-headers.json` **et**
+  `deploy/security-headers.inc` (un test vérifie qu'ils restent identiques).
+- Écran du bureau 3D : `drawNetForgeScreen` dans `src/game/textures.ts` ; dalle `bureau.netforge` dans `src/game/layout.ts`.
+
+## Modifier les loisirs (section « Hors de l'infra » et circuit)
+
+`src/data/hobbies.ts` : `title`, `kicker`, `lines` (phrases à la première personne), `quote` facultative, `tags`.
+N'y mettez que ce qu'Evann a fourni (pas de rang, de temps de jeu ni de préférence supposée). Chaque loisir est ouvert par une
+anomalie du circuit (`src/data/anomalies.ts`, `world: "circuit"`, `color` du cube) placée dans `ANOMALY_PLACEMENTS`
+(repère du circuit) ; le décor du spot est dans `src/game/circuit/Spots.tsx` et sa position dans `SPOTS`
+(`src/game/circuit/layout.ts`). Le test vérifie que les anomalies du circuit restent dans l'infield, hors de la piste.
+
+## Ajouter une anomalie (lab ou circuit)
 
 1. `types.ts` : identifiant dans `AnomalyId`, au format `evann.<famille>.<nom>` (ex. `evann.projects.monoutil`).
-2. `src/data/anomalies.ts` : entrée avec `source` (objet d'où elle s'échappe), `zone`, `target` (contenu ouvert),
-   `fragments` (courts textes décoratifs, sans fausse information) et éventuellement `revealedBy`.
-3. `src/game/layout.ts` → `ANOMALY_PLACEMENTS` : `float` (position flottante) et `ground` (point au sol où se tenir).
-   Le test `src/game/interaction.test.ts` vérifie que chaque anomalie est placée sur l'île et que les points ne se masquent pas.
+2. `src/data/anomalies.ts` : entrée avec `source` (objet d'où elle s'échappe), `world` (`"lab"` ou `"circuit"`), `zone`,
+   `target` (contenu ouvert), `fragments` (courts textes décoratifs, sans fausse information), éventuellement `color` et `revealedBy`.
+3. `src/game/layout.ts` → `ANOMALY_PLACEMENTS` : `float` (position flottante) et `ground` (point au sol où se tenir), dans le
+   repère du monde concerné. Le test `src/game/interaction.test.ts` vérifie les placements des deux mondes.
 
 ## Ajouter une commande au terminal
 
@@ -90,6 +107,21 @@ il ne change jamais tout seul avec la date.
 
 Les sorties sont des segments (`text`, `link`, `action`) rendus par React : jamais de HTML brut.
 Ajoutez un test dans `src/terminal/interpreter.test.ts`.
+
+La commande cachée `cars` renvoie le texte exact `RACER_UNLOCKED` et l'effet `unlock-racer` (traité dans
+`src/components/terminal/Terminal.tsx` : `useApp().unlockNascar()`, qui active aussi le son). Pour réinitialiser le mode course :
+menu Pause → « Réinitialiser toute la progression », ou bouton de réinitialisation du pied de page.
+
+## Circuit : tracé, véhicules, son
+
+- Tracé, dévers, chronométrage, positions (paddock, sas, grille, kart, spots) : `src/game/circuit/layout.ts`, testé par
+  `layout.test.ts`. Modifier `TRACK` recalcule la piste, les vibreurs, le mur et la collision.
+- Réglages des véhicules : `SPECS` dans `src/game/circuit/VehicleController.tsx` (masse, centre de gravité, suspension,
+  force moteur, vitesse maximale, freinage, braquage, adhérence normale et en drift, appui aérodynamique).
+- Musique : `src/audio/synthwave.ts` (tempo, accords, motifs). Sons d'interface : `CUES` dans `src/audio/AudioEngine.ts`.
+- **Retirer l'intro audio** (droits non vérifiés) : supprimez `public/audio/intro-racer.m4a` et `public/audio/intro-racer.ogg`.
+  Le moteur détecte l'erreur de chargement et passe directement à la musique générée. Pour la remplacer, déposez un fichier
+  sous les mêmes noms (AAC en `.m4a`, Opus en `.ogg`), ou changez `INTRO_SOURCES`.
 
 ## Modifier l'avatar
 

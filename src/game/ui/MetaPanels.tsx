@@ -5,8 +5,10 @@ import { useApp } from "@/state/app";
 import { useLabUi } from "@/state/labUi";
 import { MISSION_STEPS, stepCompletion } from "@/sim/mission";
 import { Dialog } from "./Dialog";
-import { openContent } from "./actions";
+import { openContent, travelTo } from "./actions";
+import { anomaliesOf } from "../interaction";
 import { cameraControl } from "../camera/CameraRig";
+import { audioEngine } from "@/audio/AudioEngine";
 
 const STATE_LABEL = { spotted: "repérée", viewed: "consultée" } as const;
 
@@ -18,17 +20,22 @@ export function IndexPanel({ onClose }: { onClose: () => void }) {
   const setMode = useApp((s) => s.setMode);
   const entries = contentIndex();
   const groups = [...new Set(entries.map((e) => e.group))];
-  const viewed = anomalies.filter((a) => states[a.id] === "viewed").length;
+  const world = useApp((s) => s.world);
+  const count = (w: "lab" | "circuit") => anomaliesOf(w).filter((a) => states[a.id] === "viewed").length;
   const done = stepCompletion(lab, mission);
   const stepsDone = MISSION_STEPS.filter((s) => done[s.id]).length;
   return (
     <Dialog title="Index des contenus" kicker={<span className="lab-mono">Tout le parcours, accessible sans jouer</span>} onClose={onClose} size="wide">
       <div className="lab-index-summary">
         <p>
-          <strong>{viewed}</strong> / {anomalies.length} anomalies stabilisées · mission : <strong>{stepsDone}</strong> / {MISSION_STEPS.length} étapes
+          Lab : <strong>{count("lab")}</strong> / {anomaliesOf("lab").length} anomalies · circuit : <strong>{count("circuit")}</strong> /{" "}
+          {anomaliesOf("circuit").length} · mission : <strong>{stepsDone}</strong> / {MISSION_STEPS.length} étapes
         </p>
         <button type="button" className="lab-btn" onClick={() => setMode("sober")}>
           Lire le parcours en mode sobre
+        </button>
+        <button type="button" className="lab-btn" onClick={() => travelTo(world === "lab" ? "circuit" : "lab")}>
+          {world === "lab" ? "Aller au circuit extérieur" : "Rentrer au lab"}
         </button>
       </div>
       <div className="lab-index">
@@ -90,10 +97,34 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
           </div>
         ))}
       </dl>
+      <h3 className="lab-h3">Circuit extérieur et véhicules</h3>
+      <dl className="lab-keys">
+        {[
+          ["E près d'un véhicule", "monter à bord (kart des stands, stock-car)"],
+          ["Z / W ou ↑", "accélérer"],
+          ["S ou ↓", "freiner, puis reculer"],
+          ["Q / A, D ou ← →", "diriger"],
+          ["Espace", "frein à main : drift"],
+          ["F", "monter dans le véhicule proche ou descendre"],
+          ["R", "remettre le véhicule sur ses roues"],
+        ].map(([k, v]) => (
+          <div key={k}>
+            <dt className="lab-kbd">{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p>
+        Le sas du mur du fond (lab) et celui du paddock (circuit) relient les deux mondes. Le son reste coupé tant que tu ne l&apos;actives pas
+        (bouton en haut de l&apos;écran).
+      </p>
       <h3 className="lab-h3">Manette</h3>
-      <p>Stick gauche : se déplacer · A / Croix : sauter · X / Carré : interagir · gâchette droite : courir · B / Rond : fermer · Start : pause.</p>
+      <p>
+        Stick gauche : se déplacer ou diriger · A / Croix : sauter ou drifter · X / Carré : interagir · Y / Triangle : monter ou descendre d&apos;un
+        véhicule · gâchettes : accélérer, freiner · B / Rond : fermer · Start : pause.
+      </p>
       <h3 className="lab-h3">Écran tactile</h3>
-      <p>Joystick en bas à gauche, boutons Interagir, Sauter et Courir en bas à droite.</p>
+      <p>Joystick en bas à gauche (en véhicule : haut pour accélérer, côtés pour diriger), boutons d&apos;action en bas à droite.</p>
     </Dialog>
   );
 }
@@ -101,10 +132,13 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
 export function PauseMenu({ onClose }: { onClose: () => void }) {
   const settings = useApp((s) => s.settings);
   const updateSettings = useApp((s) => s.updateSettings);
+  const audio = useApp((s) => s.audio);
+  const setAudio = useApp((s) => s.setAudio);
   const resetAll = useApp((s) => s.resetAll);
   const resetMission = useApp((s) => s.resetMission);
   const setMode = useApp((s) => s.setMode);
   const openPanel = useLabUi((s) => s.openPanel);
+  const world = useApp((s) => s.world);
   const [confirm, setConfirm] = useState<null | "all" | "mission">(null);
   return (
     <Dialog title="Pause" onClose={onClose} size="center" closeLabel="Reprendre">
@@ -128,6 +162,9 @@ export function PauseMenu({ onClose }: { onClose: () => void }) {
         >
           Recentrer la caméra
         </button>
+        <button type="button" className="lab-btn" onClick={() => travelTo(world === "lab" ? "circuit" : "lab")}>
+          {world === "lab" ? "Sortir vers le circuit (sas)" : "Rentrer au lab (sas)"}
+        </button>
         <button type="button" className="lab-btn" onClick={() => setMode("sober")}>
           Passer au mode sobre
         </button>
@@ -144,8 +181,15 @@ export function PauseMenu({ onClose }: { onClose: () => void }) {
           </label>
         </fieldset>
         <label className="lab-switch">
-          <input type="checkbox" checked={settings.sound} onChange={(e) => updateSettings({ sound: e.target.checked })} />
-          <span>Effets sonores (désactivés par défaut)</span>
+          <input
+            type="checkbox"
+            checked={!audio.muted}
+            onChange={(e) => {
+              audioEngine.unlock();
+              setAudio({ muted: !e.target.checked });
+            }}
+          />
+          <span>Son : effets, moteur et musique du circuit (coupé par défaut)</span>
         </label>
         <label className="lab-switch">
           <input type="checkbox" checked={settings.effects === false} onChange={(e) => updateSettings({ effects: e.target.checked ? false : null })} />
@@ -160,8 +204,11 @@ export function PauseMenu({ onClose }: { onClose: () => void }) {
             type="button"
             className="lab-btn lab-btn--danger"
             onClick={() => {
-              if (confirm === "all") resetAll();
-              else resetMission();
+              if (confirm === "all") {
+                // Le monde affiché reste monté : on le garde comme monde courant.
+                resetAll();
+                useApp.getState().setWorld(world);
+              } else resetMission();
               setConfirm(null);
             }}
           >

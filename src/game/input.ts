@@ -15,6 +15,10 @@ export interface InputState {
   touchRun: boolean;
   gamepadRun: boolean;
   gamepadMove: { x: number; y: number };
+  /** Gâchettes de la manette : accélérer (+) / freiner, reculer (−). */
+  gamepadThrottle: number;
+  gamepadDrift: boolean;
+  touchDrift: boolean;
 }
 
 export const input: InputState = {
@@ -24,6 +28,9 @@ export const input: InputState = {
   touchRun: false,
   gamepadRun: false,
   gamepadMove: { x: 0, y: 0 },
+  gamepadThrottle: 0,
+  gamepadDrift: false,
+  touchDrift: false,
 };
 
 const FORWARD = ["KeyW", "ArrowUp"];
@@ -41,6 +48,9 @@ export function resetInput(): void {
   input.gamepadMove.x = 0;
   input.gamepadMove.y = 0;
   input.gamepadRun = false;
+  input.gamepadThrottle = 0;
+  input.gamepadDrift = false;
+  input.touchDrift = false;
   input.jumpAt = -Infinity;
 }
 
@@ -67,6 +77,26 @@ export function moveVector(): { x: number; y: number; run: boolean } {
   return { x, y, run };
 }
 
+/**
+ * Commandes d'un véhicule, dans son propre repère : accélérateur (−1 … 1),
+ * direction (positive vers la gauche) et frein à main pour le drift.
+ */
+export function vehicleInput(): { throttle: number; steer: number; drift: boolean } {
+  let throttle = (any(FORWARD) ? 1 : 0) - (any(BACK) ? 1 : 0);
+  let steer = (any(LEFT) ? 1 : 0) - (any(RIGHT) ? 1 : 0);
+  const t = input.touch;
+  if (Math.hypot(t.x, t.y) > 0.15) {
+    throttle = Math.max(-1, Math.min(1, t.y * 1.4));
+    steer = -t.x;
+  }
+  const g = input.gamepadMove;
+  if (Math.abs(g.x) > 0.05) steer = -g.x;
+  if (Math.abs(input.gamepadThrottle) > 0.05) throttle = input.gamepadThrottle;
+  else if (Math.abs(g.y) > 0.3 && throttle === 0) throttle = g.y;
+  const drift = input.keys.has("Space") || input.touchDrift || input.gamepadDrift;
+  return { throttle, steer, drift };
+}
+
 export interface GameKeyHandlers {
   /** Le jeu accepte-t-il les commandes (pas de panneau ouvert) ? */
   canPlay: () => boolean;
@@ -75,6 +105,10 @@ export interface GameKeyHandlers {
   onIndex: () => void;
   onHelp: () => void;
   onRecenter: () => void;
+  /** Monter dans un véhicule proche ou en descendre (F). */
+  onVehicle?: () => void;
+  /** Remettre le véhicule d'aplomb (R). */
+  onReset?: () => void;
 }
 
 /** Éléments sur lesquels Entrée/Espace ont déjà un sens (bouton, lien…). */
@@ -102,7 +136,15 @@ export function attachKeyboard(handlers: GameKeyHandlers): () => void {
     switch (e.code) {
       case "Space":
         e.preventDefault();
+        // Saut à pied, frein à main (drift) en véhicule : on garde aussi l'état maintenu.
+        input.keys.add("Space");
         if (!e.repeat) input.jumpAt = performance.now();
+        break;
+      case "KeyF":
+        if (!e.repeat) handlers.onVehicle?.();
+        break;
+      case "KeyR":
+        if (!e.repeat) handlers.onReset?.();
         break;
       case "KeyE":
       case "Enter":
@@ -160,6 +202,7 @@ export interface GamepadHandlers {
   onInteract: () => void;
   onPause: () => void;
   onBack: () => void;
+  onVehicle?: () => void;
 }
 
 export function pollGamepad(handlers: GamepadHandlers): void {
@@ -169,6 +212,8 @@ export function pollGamepad(handlers: GamepadHandlers): void {
     input.gamepadMove.x = 0;
     input.gamepadMove.y = 0;
     input.gamepadRun = false;
+    input.gamepadThrottle = 0;
+    input.gamepadDrift = false;
     return;
   }
   const ax = pad.axes[0] ?? 0;
@@ -186,8 +231,11 @@ export function pollGamepad(handlers: GamepadHandlers): void {
   const pressed = pad.buttons.map((b) => b.pressed);
   const edge = (i: number) => pressed[i] && !previousButtons[i];
   input.gamepadRun = playing && !!(pressed[7] || pressed[5] || pressed[10]);
-  if (playing && edge(0)) input.jumpAt = performance.now(); // A / Croix : sauter
-  if (playing && (edge(2) || edge(3))) handlers.onInteract(); // X / Carré ou Y / Triangle : interagir
+  input.gamepadThrottle = playing ? (pad.buttons[7]?.value ?? 0) - (pad.buttons[6]?.value ?? 0) : 0;
+  input.gamepadDrift = playing && !!pressed[0];
+  if (playing && edge(0)) input.jumpAt = performance.now(); // A / Croix : sauter (drift en véhicule)
+  if (playing && edge(2)) handlers.onInteract(); // X / Carré : interagir
+  if (playing && edge(3)) (handlers.onVehicle ?? handlers.onInteract)(); // Y / Triangle : véhicule (ou interagir)
   if (edge(9)) handlers.onPause(); // Start / Options
   if (edge(1)) handlers.onBack(); // B / Rond : fermer
   previousButtons = pressed;

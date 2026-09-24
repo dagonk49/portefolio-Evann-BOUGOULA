@@ -36,8 +36,42 @@ test.describe("mode sobre", () => {
       if (h === "#") continue;
       expect(await page.locator(h).count(), `ancre ${h}`).toBeGreaterThan(0);
     }
-    const external = [...new Set(hrefs.filter((x) => /^https?:/.test(x)))];
-    expect(external).toEqual(["https://www.linkedin.com/in/evann-bougoula"]);
+    const external = [...new Set(hrefs.filter((x) => /^https?:/.test(x)))].sort();
+    expect(external).toEqual(["https://netforge.dagz.fr", "https://www.linkedin.com/in/evann-bougoula"]);
+  });
+
+  test("NetForge : carte d'accès à la plateforme réelle, sans démo locale", async ({ page }) => {
+    const requests: string[] = [];
+    page.on("request", (r) => requests.push(r.url()));
+    await page.goto("/");
+    const card = page.locator("#projet-netforge .nf-launch");
+    await expect(card.locator(".nf-launch__badges li")).toHaveText(["Outil en ligne", "IPAM", "Cisco CLI", "VLSM"]);
+    const cta = card.getByRole("link", { name: /Accéder à la plateforme NetForge \(netforge\.dagz\.fr\)/ });
+    await expect(cta).toHaveAttribute("href", "https://netforge.dagz.fr");
+    await expect(cta).toHaveAttribute("target", "_blank");
+    await expect(cta).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(cta).toContainText("↗");
+    await expect(card).toContainText("Maquette illustrative");
+    // L'ancienne démonstration VLSM a disparu.
+    await expect(page.locator(".demo")).toHaveCount(0);
+    await expect(page.getByText("Calcul VLSM")).toHaveCount(0);
+    // Aucune requête vers le site tant que l'aperçu en direct n'est pas demandé.
+    await page.waitForLoadState("networkidle");
+    expect(requests.some((u) => u.includes("netforge.dagz.fr"))).toBe(false);
+    await card.getByRole("button", { name: "Charger un aperçu en direct ici" }).click();
+    const frame = card.locator("iframe");
+    await expect(frame).toHaveAttribute("src", "https://netforge.dagz.fr");
+    await expect(frame).toHaveAttribute("sandbox", /allow-scripts/);
+    await expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
+  });
+
+  test("section « Hors de l'infra » : les quatre loisirs fournis", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("navigation", { name: "Sections du portfolio" }).getByRole("link", { name: "Loisirs" })).toHaveAttribute("href", "#loisirs");
+    const cards = page.locator(".hobby");
+    await expect(cards).toHaveCount(4);
+    await expect(page.locator("#loisir-valorant")).toContainText("Duelist ou Initiator, prêt à clutch l'infra");
+    await expect(page.locator("#loisir-gta")).toContainText("Le seul braquage toléré est celui d'une baie mal brassée.");
   });
 
   test("audit d'accessibilité automatique (axe)", async ({ page }) => {

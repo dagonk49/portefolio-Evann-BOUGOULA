@@ -1,7 +1,7 @@
 "use client";
 import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, useRapier, type RapierRigidBody } from "@react-three/rapier";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLabUi } from "@/state/labUi";
 import { useApp } from "@/state/app";
@@ -27,21 +27,37 @@ const JUMP_BUFFER_MS = 140;
 const RIGHT = new THREE.Vector2(Math.cos(CAMERA_YAW), -Math.sin(CAMERA_YAW));
 const UP = new THREE.Vector2(-Math.sin(CAMERA_YAW), -Math.cos(CAMERA_YAW));
 
-export function PlayerController({ reducedMotion, paused }: { reducedMotion: boolean; paused: boolean }) {
+export interface PlayerControllerProps {
+  reducedMotion: boolean;
+  paused: boolean;
+  /** Position de départ (par défaut : dernière position enregistrée dans le lab). */
+  start?: Vec3;
+  /** Réapparition après une chute. */
+  spawn?: Vec3;
+  respawnY?: number;
+  /** Enregistrer la position au démontage (lab uniquement). */
+  persist?: boolean;
+}
+
+export function PlayerController({ reducedMotion, paused, start: startAt, spawn = SPAWN, respawnY = RESPAWN_Y, persist = true }: PlayerControllerProps) {
   const body = useRef<RapierRigidBody>(null);
   const { world, rapier } = useRapier();
   const lastGrounded = useRef(0);
   const ccdOff = useRef(0);
   const ray = useRef<InstanceType<typeof rapier.Ray> | null>(null);
-  const start = useRef<Vec3>(useApp.getState().progress.player ?? SPAWN);
+  const start = useRef<Vec3>(startAt ?? useApp.getState().progress.player ?? SPAWN);
+
+  // Position immédiate pour la caméra et les interactions, avant la première image.
+  useState(() => player.position.set(start.current[0], start.current[1], start.current[2]));
 
   // Sauvegarde de la position en quittant le lab : le retour reprend au même endroit.
   useEffect(() => {
+    if (!persist) return;
     return () => {
       const p = player.position;
       if (Number.isFinite(p.x)) useApp.getState().savePlayer([p.x, Math.max(p.y, 0.9), p.z]);
     };
-  }, []);
+  }, [persist]);
 
   useFrame((_, delta) => {
     const rb = body.current;
@@ -94,7 +110,7 @@ export function PlayerController({ reducedMotion, paused }: { reducedMotion: boo
     }
     rb.setLinvel({ x: nvx, y: nvy, z: nvz }, true);
 
-    if (pos.y < RESPAWN_Y) player.teleport = new THREE.Vector3(SPAWN[0], SPAWN[1] + 1, SPAWN[2]);
+    if (pos.y < respawnY) player.teleport = new THREE.Vector3(spawn[0], spawn[1] + 1, spawn[2]);
 
     player.position.set(pos.x, pos.y - FOOT_OFFSET, pos.z);
     player.velocity.set(nvx, nvy, nvz);

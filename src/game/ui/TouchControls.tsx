@@ -1,15 +1,17 @@
 "use client";
 import { useRef, useState } from "react";
+import type { WorldId } from "@/data/types";
 import { useLabUi } from "@/state/labUi";
 import { input } from "../input";
-import { interactWith } from "./actions";
+import { exitVehicle, interactWith } from "./actions";
 
 const RADIUS = 52;
 
 /** Joystick virtuel et boutons d'action pour écran tactile. */
-export function TouchControls() {
+export function TouchControls({ world = "lab" }: { world?: WorldId }) {
   const panel = useLabUi((s) => s.panel);
   const active = useLabUi((s) => s.active);
+  const driving = useLabUi((s) => s.driving);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const [run, setRun] = useState(false);
   const origin = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -63,20 +65,40 @@ export function TouchControls() {
         >
           Interagir
         </button>
-        <button type="button" className="touch-btn" onPointerDown={() => (input.jumpAt = performance.now())}>
-          Sauter
-        </button>
-        <button
-          type="button"
-          className="touch-btn"
-          aria-pressed={run}
-          onClick={() => {
-            input.touchRun = !run;
-            setRun(!run);
-          }}
-        >
-          Courir
-        </button>
+        {world === "circuit" && driving ? (
+          <>
+            <button
+              type="button"
+              className="touch-btn"
+              onPointerDown={() => (input.touchDrift = true)}
+              onPointerUp={() => (input.touchDrift = false)}
+              onPointerCancel={() => (input.touchDrift = false)}
+              onPointerLeave={() => (input.touchDrift = false)}
+            >
+              Drift
+            </button>
+            <button type="button" className="touch-btn" onClick={() => exitVehicle()}>
+              Descendre
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="touch-btn" onPointerDown={() => (input.jumpAt = performance.now())}>
+              Sauter
+            </button>
+            <button
+              type="button"
+              className="touch-btn"
+              aria-pressed={run}
+              onClick={() => {
+                input.touchRun = !run;
+                setRun(!run);
+              }}
+            >
+              Courir
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

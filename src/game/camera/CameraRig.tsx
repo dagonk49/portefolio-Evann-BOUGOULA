@@ -1,19 +1,24 @@
 "use client";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import type { WorldId } from "@/data/types";
 import { useLabUi } from "@/state/labUi";
 import { CAMERA_YAW } from "../layout";
 import { moveVector } from "../input";
 import { player } from "../player/playerState";
 
-const PITCH = THREE.MathUtils.degToRad(41);
 export const BASE_DISTANCE = 26;
-const OFFSET = new THREE.Vector3(
-  Math.sin(CAMERA_YAW) * Math.cos(PITCH),
-  Math.sin(PITCH),
-  Math.cos(CAMERA_YAW) * Math.cos(PITCH),
-);
+
+/** Cadrage par monde : le circuit est plus vaste, la caméra un peu plus basse et plus loin. */
+const FRAMING: Record<WorldId, { pitch: number; distance: number }> = {
+  lab: { pitch: THREE.MathUtils.degToRad(41), distance: BASE_DISTANCE },
+  circuit: { pitch: THREE.MathUtils.degToRad(37), distance: 29 },
+};
+
+function offsetFor(pitch: number): THREE.Vector3 {
+  return new THREE.Vector3(Math.sin(CAMERA_YAW) * Math.cos(pitch), Math.sin(pitch), Math.cos(CAMERA_YAW) * Math.cos(pitch));
+}
 const RIGHT = new THREE.Vector3(Math.cos(CAMERA_YAW), 0, -Math.sin(CAMERA_YAW));
 const UP = new THREE.Vector3(-Math.sin(CAMERA_YAW), 0, -Math.cos(CAMERA_YAW));
 
@@ -32,19 +37,24 @@ export const cameraControl = {
  * À l'ouverture d'une fiche, elle cadre l'objet concerné (travelling),
  * décalé pour rester visible à côté du panneau.
  */
-export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
+export function CameraRig({ reducedMotion, world = "lab" }: { reducedMotion: boolean; world?: WorldId }) {
   const { camera, gl, size } = useThree();
+  const framing = FRAMING[world];
+  const OFFSET = useMemo(() => offsetFor(framing.pitch), [framing.pitch]);
+  const base = framing.distance;
   const target = useRef(new THREE.Vector3().copy(player.position));
-  const distance = useRef(BASE_DISTANCE);
+  const distance = useRef(base);
   const tmp = useRef(new THREE.Vector3());
   const look = useRef(new THREE.Vector3());
 
   useEffect(() => {
     // Placement initial immédiat (pas de cinématique d'arrivée).
     target.current.copy(player.position).add(new THREE.Vector3(0, 1, 0));
-    camera.position.copy(target.current).addScaledVector(OFFSET, BASE_DISTANCE);
+    distance.current = base;
+    camera.position.copy(target.current).addScaledVector(OFFSET, base);
     camera.lookAt(target.current);
-  }, [camera]);
+    cameraControl.recenter();
+  }, [camera, OFFSET, base]);
 
   // Glisser pour décaler légèrement la vue ; molette pour zoomer.
   useEffect(() => {
@@ -60,7 +70,7 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
       const dy = e.clientY - drag.y;
       drag.x = e.clientX;
       drag.y = e.clientY;
-      const k = (0.03 * distance.current) / BASE_DISTANCE;
+      const k = (0.03 * distance.current) / base;
       cameraControl.pan.addScaledVector(RIGHT, -dx * k).addScaledVector(UP, dy * k);
       if (cameraControl.pan.length() > 8) cameraControl.pan.setLength(8);
     };
@@ -93,7 +103,7 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     let desiredDistance: number;
     if (focus) {
       desired.set(focus.target[0], focus.target[1], focus.target[2]);
-      desiredDistance = BASE_DISTANCE * focus.distance;
+      desiredDistance = base * focus.distance;
       // Le panneau occupe la droite (bureau) ou le bas (mobile) : on décale le cadrage.
       if (size.width >= 900) desired.addScaledVector(RIGHT, desiredDistance * 0.2);
       else desired.y -= desiredDistance * 0.16;
@@ -104,9 +114,11 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
       desired.copy(player.position);
       desired.y += 1;
       look.current.set(player.velocity.x, 0, player.velocity.z);
-      desired.addScaledVector(look.current, 0.22);
+      desired.addScaledVector(look.current, world === "circuit" ? 0.3 : 0.22);
       desired.add(cameraControl.pan);
-      desiredDistance = BASE_DISTANCE * cameraControl.zoom;
+      // En véhicule, la caméra recule avec la vitesse.
+      const driving = world === "circuit" && useLabUi.getState().driving !== null;
+      desiredDistance = base * cameraControl.zoom * (1 + (driving ? 0.38 * player.speed01 : 0));
     }
     const lambda = reducedMotion ? 60 : focus ? 3.2 : 5;
     target.current.x = THREE.MathUtils.damp(target.current.x, desired.x, lambda, dt);

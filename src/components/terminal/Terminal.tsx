@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { complete, execute, type EasterEgg, type Line } from "@/terminal/interpreter";
+import { complete, execute, type EasterEgg, type Line, type TerminalAction } from "@/terminal/interpreter";
 import { effectsEnabled, useApp } from "@/state/app";
 import { detectWebGL, openExternal, prefersReducedMotion } from "@/lib/device";
+import { audioEngine } from "@/audio/AudioEngine";
 import { EasterEggFx } from "./EasterEggFx";
 
 const PROMPT = "visiteur@evann:~$";
@@ -69,6 +70,11 @@ export function Terminal() {
     for (const effect of result.effects) {
       if (effect.type === "open-url") openExternal(effect.url);
       if (effect.type === "fx") fx = effect.name;
+      if (effect.type === "unlock-racer") {
+        // Geste du visiteur : le contexte audio peut être déverrouillé ici.
+        audioEngine.unlock(true);
+        useApp.getState().unlockNascar();
+      }
     }
     if (result.effects.some((e) => e.type === "clear")) {
       setEntries([]);
@@ -113,9 +119,13 @@ export function Terminal() {
     }
   };
 
-  const runAction = (action: "print" | "enter-3d") => {
+  const runAction = (action: TerminalAction) => {
     if (action === "print") window.print();
-    else setMode("lab");
+    else if (action === "enter-circuit") {
+      audioEngine.unlock(true);
+      useApp.getState().setWorld("circuit");
+      setMode("lab");
+    } else setMode("lab");
   };
 
   return (

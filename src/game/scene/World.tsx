@@ -13,6 +13,8 @@ import { Anomalies } from "./Anomalies";
 import { InteractionSystem } from "./InteractionSystem";
 import { PlayerController } from "../player/PlayerController";
 import { StaticBatch } from "./StaticBatch";
+import { ExitDoor } from "./ExitDoor";
+import { INTERACTABLES } from "../layout";
 
 export function World({ reducedMotion, quality, paused }: { reducedMotion: boolean; quality: "high" | "low"; paused: boolean }) {
   return (
@@ -28,10 +30,11 @@ export function World({ reducedMotion, quality, paused }: { reducedMotion: boole
         <Desk />
         <Cluster reducedMotion={reducedMotion} />
         <Career />
+        <ExitDoor />
       </StaticBatch>
       <Letters />
       <PhysicsProps />
-      <Pads reducedMotion={reducedMotion} />
+      <Pads reducedMotion={reducedMotion} items={INTERACTABLES} />
       <Anomalies reducedMotion={reducedMotion} quality={quality} />
       <ActivePrompt />
       <PlayerController reducedMotion={reducedMotion} paused={paused} />

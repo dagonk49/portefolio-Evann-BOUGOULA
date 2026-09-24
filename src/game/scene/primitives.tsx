@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { FONT_MONO, FONT_SANS, glow, mat, unitBox, type PaletteKey } from "../materials";
 import type { Vec3 } from "../layout";
 
-type MatSpec = PaletteKey | THREE.Material;
+type MatSpec = PaletteKey | `#${string}` | THREE.Material;
 
 function resolve(m: MatSpec): THREE.Material {
   return typeof m === "string" ? mat(m) : m;

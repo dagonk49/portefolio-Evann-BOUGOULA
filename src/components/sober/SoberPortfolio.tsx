@@ -6,6 +6,7 @@ import { About, ExperienceSection } from "./Career";
 import { SkillsSection } from "./Skills";
 import { HomeLabSection, ProjectsSection } from "./Projects";
 import { ContactSection, EducationSection } from "./Credentials";
+import { HobbiesSection } from "./Hobbies";
 import { SectionHeading } from "./common";
 
 const NAV = [
@@ -15,6 +16,7 @@ const NAV = [
   { href: "#projets", label: "Projets" },
   { href: "#homelab", label: "HomeLab" },
   { href: "#formations", label: "Formations" },
+  { href: "#loisirs", label: "Loisirs" },
   { href: "#contact", label: "Contact" },
   { href: "#terminal", label: "Terminal" },
 ];
@@ -54,11 +56,12 @@ export function SoberPortfolio() {
         <ProjectsSection />
         <HomeLabSection />
         <EducationSection />
+        <HobbiesSection />
         <ContactSection />
         <section className="section section--terminal" aria-labelledby="terminal">
           <SectionHeading
             id="terminal"
-            index="08"
+            index="09"
             title="Terminal"
             lead="Un bonus pour les curieux : tout ce qu'il affiche se trouve déjà plus haut. Tapez help pour commencer."
           />

@@ -13,7 +13,9 @@ n'affiche simplement pas l'élément (aucun lorem ipsum, aucun « à compléter 
 | **Coordonnées** | LinkedIn uniquement | Email professionnel, téléphone… | `src/data/profile.ts` → `contacts` (type à étendre) |
 | **GitHub** | Absent | URL du profil | `profile.contacts` |
 | **CV** | Commande `cv` et bouton « Imprimer mon parcours » (feuille d'impression dédiée) | Fichier PDF | Déposer dans `public/` et renseigner `profile.cvFile` (ex. `"/cv-evann-bougoula.pdf"`) |
-| **NetForge** | Présentation, piliers, valeur ; aucune URL, aucune stack | URL, dépôt, captures, stack, état du projet | `src/data/projects.ts` → `netforge.links` et textes |
+| **NetForge** | Présentation, piliers, valeur, bouton vers `https://netforge.dagz.fr` (URL fournie, non ouverte depuis l'environnement de développement), maquette illustrative | Captures réelles, stack, dépôt éventuel ; vérifier que le site accepte l'aperçu intégré (sinon le bouton suffit) | `src/data/projects.ts` → `netforge` |
+| **Intro audio du circuit** | Fichier fourni avec le brief v2, lu en mode course | Source et droits de diffusion du fichier (s'il vient d'un film ou d'une œuvre protégée, autorisation nécessaire ou retrait) | `public/audio/` (voir le guide d'édition) |
+| **Loisirs** | Valorant (Duelist / Initiator), Minecraft, GTA V et VI, cinéma et mécanique : phrases du brief uniquement | Rien d'obligatoire ; précisions seulement si vous souhaitez les publier | `src/data/hobbies.ts` |
 | **HomeLab** | Schéma logique des usages connus | Nombre de VM, matériel, topologie, logiciels de la bibliothèque (seulement si vous voulez les publier) | `src/data/projects.ts` → `homelab` |
 | **Avatar** | Personnage stylisé générique (aucune photo fournie) | Indications d'apparence (couleurs, cheveux, casquette…) | `src/game/avatar.config.ts` |
 | **Compétences sans contexte** | NAT et Hyper-V affichés « déclarés sur mon profil » | Contexte réel éventuel | `src/data/skills.ts` → `contexts` |
@@ -26,3 +28,5 @@ n'affiche simplement pas l'élément (aucun lorem ipsum, aucun « à compléter 
 - Le certificat **Cisco** est présenté comme un certificat d'introduction à la cybersécurité, distinct d'un CCNA.
 - « Plus de 50 % des ressources » est présenté comme votre description de l'organisation du lab, pas comme une mesure.
 - Les liens entre compétences et contextes ne reprennent que ce qui est documenté (ex. Ubiquiti ↔ stage 2024, Proxmox ↔ stage 2025 et HomeLab).
+- Les décors du circuit citent des jeux et des films par leur nom, sans logo ni visuel officiel ; aucun titre de film précis n'est cité.
+- La vitesse affichée par le tableau de bord est celle de la simulation (m/s × 3,6), pas une performance réelle.

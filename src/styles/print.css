@@ -34,7 +34,9 @@
   .hero__visual,
   .hero__kicker .patch-strip,
   .section--terminal,
-  .demo,
+  .nf-launch__preview,
+  .nf-launch__frame,
+  .nf-launch__text-btn,
   .site-footer .reset-prefs,
   .contact__print,
   .lab-loading,
@@ -136,5 +138,27 @@
 
   .contact__link {
     border: 1px solid #000;
+  }
+
+  .nf-launch {
+    background: none;
+    color: #000;
+    border: 1px solid #000;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .nf-launch__badges li,
+  .nf-launch__status {
+    color: #000;
+    background: none;
+    border-color: #000;
+  }
+
+  .nf-cta {
+    padding: 0;
+    background: none;
+    color: #000;
+    box-shadow: none;
   }
 }

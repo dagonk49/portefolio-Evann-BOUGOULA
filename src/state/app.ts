@@ -4,7 +4,7 @@
  * et progression du lab. Seul ce qui est utile est persisté (format versionné).
  */
 import { create } from "zustand";
-import type { AnomalyId } from "@/data/types";
+import type { AnomalyId, WorldId } from "@/data/types";
 import { anomalyById } from "@/data/anomalies";
 import { clearPersisted, loadPersisted, savePersisted, storageAvailable } from "@/lib/storage";
 import {
@@ -27,7 +27,6 @@ export interface Settings {
   quality: "high" | "low";
   /** Baisse automatique de la qualité si l'animation n'est pas fluide. */
   autoQuality: boolean;
-  sound: boolean;
   /** `null` : suit la préférence système de réduction des mouvements. */
   effects: boolean | null;
   helpSeen: boolean;
@@ -41,13 +40,27 @@ export interface Progress {
   player: [number, number, number] | null;
 }
 
+export interface AudioSettings {
+  /** Tout le son du lab et du circuit (coupé par défaut). */
+  muted: boolean;
+  /** Volume général, de 0 à 1. */
+  volume: number;
+}
+
 interface PersistedData {
   modePreference: Mode | null;
   settings: Settings;
   progress: Progress;
+  /** Monde 3D actif : le lab intérieur ou le circuit extérieur. */
+  world: WorldId;
+  /** Secret du terminal (`cars`) : le circuit se parcourt en stock-car. */
+  isNascarUnlocked: boolean;
+  audio: AudioSettings;
+  /** Meilleur tour du circuit, en millisecondes. */
+  bestLap: number | null;
 }
 
-const defaultSettings = (): Settings => ({ quality: "high", autoQuality: true, sound: false, effects: null, helpSeen: false });
+const defaultSettings = (): Settings => ({ quality: "high", autoQuality: true, effects: null, helpSeen: false });
 const defaultProgress = (): Progress => ({
   anomalies: {},
   lab: initialLabState(),
@@ -65,6 +78,11 @@ interface AppStore extends PersistedData {
   lastReport: DiagnosticReport | null;
 
   hydrate: () => void;
+  setWorld: (world: WorldId) => void;
+  unlockNascar: () => void;
+  setNascar: (on: boolean) => void;
+  setAudio: (patch: Partial<AudioSettings>) => void;
+  recordLap: (ms: number) => boolean;
   setMode: (mode: Mode, options?: { anchor?: string; remember?: boolean }) => void;
   consumeAnchor: () => string | null;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -85,10 +103,21 @@ interface AppStore extends PersistedData {
 }
 
 /** Vérifie une progression relue depuis le stockage (données potentiellement anciennes). */
+const defaultAudio = (): AudioSettings => ({ muted: true, volume: 0.7 });
+
 function sanitize(data: Partial<PersistedData> | null): PersistedData {
-  const base: PersistedData = { modePreference: null, settings: defaultSettings(), progress: defaultProgress() };
+  const base: PersistedData = {
+    modePreference: null,
+    settings: defaultSettings(),
+    progress: defaultProgress(),
+    world: "lab",
+    isNascarUnlocked: false,
+    audio: defaultAudio(),
+    bestLap: null,
+  };
   if (!data || typeof data !== "object") return base;
-  const settings = { ...base.settings, ...(data.settings ?? {}) };
+  const { sound: legacySound, ...storedSettings } = (data.settings ?? {}) as Partial<Settings> & { sound?: unknown };
+  const settings = { ...base.settings, ...storedSettings };
   if (settings.quality !== "high" && settings.quality !== "low") settings.quality = "high";
   const p = data.progress;
   const progress = defaultProgress();
@@ -117,13 +146,24 @@ function sanitize(data: Partial<PersistedData> | null): PersistedData {
     }
   }
   const modePreference = data.modePreference === "lab" || data.modePreference === "sober" ? data.modePreference : null;
-  return { modePreference, settings, progress };
+  const world: WorldId = data.world === "circuit" ? "circuit" : "lab";
+  const audio: AudioSettings = {
+    // Ancien réglage v1 « effets sonores » : repris comme état initial du son.
+    muted: typeof data.audio?.muted === "boolean" ? data.audio.muted : legacySound !== true,
+    volume: typeof data.audio?.volume === "number" && data.audio.volume >= 0 && data.audio.volume <= 1 ? data.audio.volume : 0.7,
+  };
+  const bestLap = typeof data.bestLap === "number" && Number.isFinite(data.bestLap) && data.bestLap > 0 ? data.bestLap : null;
+  return { modePreference, settings, progress, world, isNascarUnlocked: data.isNascarUnlocked === true, audio, bestLap };
 }
 
 export const useApp = create<AppStore>()((set, get) => ({
   modePreference: null,
   settings: defaultSettings(),
   progress: defaultProgress(),
+  world: "lab",
+  isNascarUnlocked: false,
+  audio: defaultAudio(),
+  bestLap: null,
   hydrated: false,
   storageOk: false,
   mode: "sober",
@@ -134,6 +174,22 @@ export const useApp = create<AppStore>()((set, get) => ({
     if (get().hydrated) return;
     const data = sanitize(loadPersisted<PersistedData>());
     set({ ...data, hydrated: true, storageOk: storageAvailable() });
+  },
+
+  setWorld: (world) => set({ world }),
+
+  // Le secret active aussi le son du circuit : c'est une demande explicite du visiteur.
+  unlockNascar: () => set((s) => ({ isNascarUnlocked: true, audio: { ...s.audio, muted: false } })),
+
+  setNascar: (on) => set({ isNascarUnlocked: on }),
+
+  setAudio: (patch) => set((s) => ({ audio: { ...s.audio, ...patch } })),
+
+  recordLap: (ms) => {
+    const best = get().bestLap;
+    if (best !== null && ms >= best) return false;
+    set({ bestLap: ms });
+    return true;
   },
 
   setMode: (mode, options) =>
@@ -208,7 +264,16 @@ export const useApp = create<AppStore>()((set, get) => ({
 
   resetAll: () => {
     clearPersisted();
-    set({ modePreference: null, settings: defaultSettings(), progress: defaultProgress(), lastReport: null });
+    set({
+      modePreference: null,
+      settings: defaultSettings(),
+      progress: defaultProgress(),
+      lastReport: null,
+      world: "lab",
+      isNascarUnlocked: false,
+      audio: defaultAudio(),
+      bestLap: null,
+    });
   },
 
   savePlayer: (pos) => set((s) => ({ progress: { ...s.progress, player: pos } })),
@@ -219,11 +284,12 @@ if (typeof window !== "undefined") {
   let timer: number | undefined;
   useApp.subscribe((state, prev) => {
     if (!state.hydrated) return;
-    if (state.settings === prev.settings && state.progress === prev.progress && state.modePreference === prev.modePreference) return;
+    const keys = ["settings", "progress", "modePreference", "world", "isNascarUnlocked", "audio", "bestLap"] as const;
+    if (keys.every((k) => state[k] === prev[k])) return;
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
-      const { modePreference, settings, progress } = useApp.getState();
-      savePersisted<PersistedData>({ modePreference, settings, progress });
+      const { modePreference, settings, progress, world, isNascarUnlocked, audio, bestLap } = useApp.getState();
+      savePersisted<PersistedData>({ modePreference, settings, progress, world, isNascarUnlocked, audio, bestLap });
     }, 250);
   });
 }

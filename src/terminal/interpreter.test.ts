@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { complete, execute, GOOGLE_URL, normalize, type CommandResult } from "./interpreter";
+import { complete, execute, GOOGLE_URL, normalize, RACER_UNLOCKED, type CommandResult } from "./interpreter";
 
 const ctx = { history: [] as string[], can3d: true };
 const text = (r: CommandResult) => r.lines.map((l) => l.map((s) => s.text).join("")).join("\n");
@@ -10,7 +10,7 @@ describe("terminal", () => {
     for (const c of ["whoami", "about", "skills", "experience", "education", "certifications", "projects", "netforge", "homelab", "contact", "linkedin", "cv", "clear", "history", "gui", "google"]) {
       expect(r).toContain(c);
     }
-    expect(r).not.toMatch(/valorant|minecraft|gta|sudo/);
+    expect(r).not.toMatch(/valorant|minecraft|gta|sudo|cars|racer|nascar/);
   });
 
   it("est insensible à la casse et aux espaces", () => {
@@ -67,6 +67,27 @@ describe("terminal", () => {
     const sudo = execute("sudo rm -rf /", ctx);
     expect(text(sudo)).toMatch(/Rien n'a été exécuté/);
     expect(sudo.effects).toEqual([{ type: "fx", name: "sudo" }]);
+  });
+
+  it("cars : débloque le mode course avec la réponse exacte", () => {
+    expect(RACER_UNLOCKED).toBe(
+      "[RACER MODE UNLOCKED] : Configuration Stock-Car validée. Rendez-vous sur le circuit extérieur pour prendre la piste.",
+    );
+    const r = execute("cars", ctx);
+    expect(text(r).split("\n")[0]).toBe(RACER_UNLOCKED);
+    expect(r.effects).toEqual([{ type: "unlock-racer" }, { type: "fx", name: "cars" }]);
+    expect(r.lines.flat().some((s) => s.kind === "action" && s.action === "enter-circuit")).toBe(true);
+    expect(execute("  CARS ", ctx).effects).toContainEqual({ type: "unlock-racer" });
+    // Sans WebGL : déblocage mémorisé, mais pas de lien vers un circuit inaccessible.
+    const no3d = execute("cars", { history: [], can3d: false });
+    expect(no3d.lines.flat().some((s) => s.kind === "action")).toBe(false);
+    expect(complete("ca").candidates).toEqual([]);
+  });
+
+  it("netforge renvoie vers la plateforme en ligne", () => {
+    const r = execute("netforge", ctx);
+    expect(r.lines.flat().some((s) => s.kind === "link" && s.href === "https://netforge.dagz.fr")).toBe(true);
+    expect(text(r)).not.toMatch(/démonstration/);
   });
 
   it("commande inconnue : message lisible, suggestion, pas d'interprétation", () => {

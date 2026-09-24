@@ -4,7 +4,7 @@
  */
 import { useApp } from "@/state/app";
 import { useLabUi } from "@/state/labUi";
-import { playCue } from "@/lib/sound";
+import { audioEngine } from "@/audio/AudioEngine";
 import { cableAt, endpointLabel, isFixedEndpoint, linkStatus, type ActiveEndpoint } from "@/sim/network";
 import { explainLink } from "@/sim/diagnostics";
 import { ENDPOINT_BY_ID, type EndpointId } from "@/sim/scenario";
@@ -12,7 +12,6 @@ import { ENDPOINT_BY_ID, type EndpointId } from "@/sim/scenario";
 export function clickPort(id: EndpointId): void {
   const ui = useLabUi.getState();
   const app = useApp.getState();
-  const sound = app.settings.sound;
   const def = ENDPOINT_BY_ID[id];
   if (!def?.selectable) return;
   const selected = ui.selectedPort;
@@ -39,11 +38,11 @@ export function clickPort(id: EndpointId): void {
   const result = app.plugCable(selected, id);
   ui.selectPort(null);
   if (!result.ok) {
-    playCue("error", sound);
+    audioEngine.cue("error");
     ui.setPatchMessage({ text: result.reason, tone: "error" });
     return;
   }
-  playCue("plug", sound);
+  audioEngine.cue("plug");
   const lab = useApp.getState().progress.lab;
   ui.setPatchMessage({ text: `Câble branché : ${endpointLabel(selected)} ↔ ${endpointLabel(id)}. ${describeAfterPlug(lab, selected, id)}`, tone: "ok" });
 }
@@ -59,7 +58,7 @@ function describeAfterPlug(lab: ReturnType<typeof useApp.getState>["progress"]["
 export function unplugPort(id: EndpointId): void {
   const app = useApp.getState();
   app.unplugCable(id);
-  playCue("unplug", app.settings.sound);
+  audioEngine.cue("unplug");
   useLabUi.getState().selectPort(null);
   useLabUi.getState().setPatchMessage({ text: `${endpointLabel(id)} débranché.`, tone: "info" });
 }

@@ -255,6 +255,30 @@
   }
 }
 
+.egg--cars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  animation: egg-slide 0.5s ease-out both;
+}
+
+.egg--cars span:not(.egg-flag) {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ff4d4d;
+}
+
+.egg-flag {
+  width: 42px;
+  height: 14px;
+  background-image: conic-gradient(#f4f1ea 25%, #16181b 0 50%, #f4f1ea 0 75%, #16181b 0);
+  background-size: 7px 7px;
+  border-radius: 2px;
+}
+
 .egg--sudo span {
   display: inline-block;
   padding: 0.1rem 0.6rem;

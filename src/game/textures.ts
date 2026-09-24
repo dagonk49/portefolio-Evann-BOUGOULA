@@ -78,43 +78,63 @@ export function screenTexture(key: string, draw: Draw, width = 512, height = 320
 
 export const MONO = "500 22px 'IBM Plex Mono', ui-monospace, monospace";
 
-/** Maquette de l'écran NetForge (illustration, pas l'application réelle). */
+/** Maquette de l'écran NetForge : la plateforme en ligne (illustration, pas une capture). */
 export const drawNetForgeScreen: Draw = (ctx, w, h) => {
-  ctx.fillStyle = "#12171b";
+  ctx.fillStyle = "#0e1215";
   ctx.fillRect(0, 0, w, h);
+  // Barre du navigateur
   ctx.fillStyle = "#1c2329";
-  ctx.fillRect(0, 0, w, 40);
-  ctx.fillStyle = "#f0a13a";
-  ctx.font = "600 22px 'IBM Plex Sans', sans-serif";
-  ctx.fillText("NetForge", 18, 28);
+  ctx.fillRect(0, 0, w, 38);
+  ["#e5534b", "#f2a948", "#59c27a"].forEach((c, i) => {
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(18 + i * 16, 19, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = "#0f1316";
+  ctx.fillRect(74, 8, w - 90, 22);
+  ctx.fillStyle = "#59e08a";
+  ctx.fillRect(84, 15, 8, 8);
+  ctx.fillStyle = "#c9d3d8";
+  ctx.font = "500 15px 'IBM Plex Mono', monospace";
+  ctx.fillText("https://netforge.dagz.fr", 100, 24);
+  // En-tête de l'application
+  ctx.fillStyle = "#f2a948";
+  ctx.font = "700 30px 'IBM Plex Sans', sans-serif";
+  ctx.fillText("NetForge", 20, 80);
   ctx.fillStyle = "#8b979f";
   ctx.font = "500 14px 'IBM Plex Mono', monospace";
-  ctx.fillText("maquette illustrative", w - 190, 26);
-  const rows = [
-    ["LAB", "192.168.10.0/26", "62"],
-    ["WIFI", "192.168.10.64/27", "30"],
-    ["ADMIN", "192.168.10.96/28", "14"],
-    ["LIEN", "192.168.10.112/30", "2"],
+  ctx.fillText("conception réseau · adressage · configurations", 20, 104);
+  // Quatre piliers
+  const tiles: [string, string, string][] = [
+    ["01", "Adressage", "VLSM"],
+    ["02", "IPAM", "léger"],
+    ["03", "Cisco", "CLI"],
+    ["04", "Visua-", "lisation"],
   ];
-  ctx.font = "500 17px 'IBM Plex Mono', monospace";
-  rows.forEach((r, i) => {
-    const y = 78 + i * 34;
-    ctx.fillStyle = i % 2 ? "#161c21" : "#1a2127";
-    ctx.fillRect(14, y - 22, w - 28, 30);
-    ctx.fillStyle = "#3cc7da";
-    ctx.fillText(r[0]!, 24, y);
-    ctx.fillStyle = "#dfe6e8";
-    ctx.fillText(r[1]!, 130, y);
-    ctx.fillStyle = "#8b979f";
-    ctx.fillText(`${r[2]} hôtes`, w - 130, y);
+  const tw = (w - 40 - 3 * 10) / 4;
+  tiles.forEach(([n, a, b], i) => {
+    const x = 20 + i * (tw + 10);
+    ctx.fillStyle = "#161c21";
+    ctx.fillRect(x, 124, tw, 112);
+    ctx.fillStyle = i === 0 ? "#3cc7da" : i === 1 ? "#f2a948" : i === 2 ? "#59c27a" : "#b88cf2";
+    ctx.fillRect(x, 124, tw, 4);
+    ctx.font = "500 14px 'IBM Plex Mono', monospace";
+    ctx.fillText(n, x + 12, 152);
+    ctx.fillStyle = "#e8eef0";
+    ctx.font = "600 19px 'IBM Plex Sans', sans-serif";
+    ctx.fillText(a, x + 12, 186);
+    ctx.fillText(b, x + 12, 210);
   });
-  ctx.fillStyle = "#0c1013";
-  ctx.fillRect(14, 222, w - 28, 84);
-  ctx.fillStyle = "#9fdbe3";
-  ctx.font = "500 15px 'IBM Plex Mono', monospace";
-  ["interface Gi0/0.10", " encapsulation dot1Q 10", " ip address 192.168.10.1 255.255.255.192"].forEach((l, i) =>
-    ctx.fillText(l, 26, 246 + i * 22),
-  );
+  // Invitation
+  ctx.fillStyle = "#f2a948";
+  ctx.fillRect(20, 254, 250, 40);
+  ctx.fillStyle = "#1a1206";
+  ctx.font = "600 17px 'IBM Plex Sans', sans-serif";
+  ctx.fillText("Ouvrir la plateforme ↗", 34, 280);
+  ctx.fillStyle = "#6f7a82";
+  ctx.font = "500 13px 'IBM Plex Mono', monospace";
+  ctx.fillText("maquette illustrative", w - 186, h - 22);
 };
 
 /** Schéma réseau affiché au mur du bureau : le scénario de la mission. */

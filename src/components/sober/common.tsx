@@ -1,5 +1,5 @@
 import type { ContentRef, SkillContextKind } from "@/data/types";
-import { anchorFor, getEducation, getExperience, getProject, organizationName } from "@/data";
+import { anchorFor, getEducation, getExperience, getHobby, getProject, organizationName } from "@/data";
 
 export function SectionHeading({ id, index, title, lead }: { id: string; index: string; title: string; lead?: string }) {
   return (
@@ -48,6 +48,8 @@ export function refShortLabel(ref: ContentRef): string {
       return "À propos";
     case "contact":
       return "Contact";
+    case "hobby":
+      return getHobby(ref.id)?.title ?? ref.id;
   }
 }
 

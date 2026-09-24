@@ -1,6 +1,6 @@
 import { homelab, projects, skillById } from "@/data";
 import { formatMonth } from "@/lib/format";
-import { NetForgeDemo } from "@/components/NetForgeDemo";
+import { NetForgeLaunch } from "@/components/NetForgeLaunch";
 import { SectionHeading } from "./common";
 
 export function ProjectsSection() {
@@ -20,6 +20,8 @@ export function ProjectsSection() {
           </h3>
           <p className="case__tagline">{nf.tagline}</p>
         </header>
+
+        <NetForgeLaunch variant="sober" />
 
         <div className="case__grid">
           <div>
@@ -84,19 +86,6 @@ export function ProjectsSection() {
           ))}
         </ul>
 
-        {nf.links.length > 0 ? (
-          <ul className="tags" aria-label="Liens du projet">
-            {nf.links.map((l) => (
-              <li key={l.href}>
-                <a href={l.href} target="_blank" rel="noopener noreferrer">
-                  {l.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        <NetForgeDemo />
       </article>
 
       {projects

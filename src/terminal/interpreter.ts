@@ -23,7 +23,9 @@ export type Tone = "muted" | "accent" | "ok" | "warn" | "strong";
 export type Segment =
   | { kind: "text"; text: string; tone?: Tone }
   | { kind: "link"; text: string; href: string }
-  | { kind: "action"; text: string; action: "print" | "enter-3d" };
+  | { kind: "action"; text: string; action: TerminalAction };
+
+export type TerminalAction = "print" | "enter-3d" | "enter-circuit";
 
 export type Line = Segment[];
 
@@ -31,9 +33,14 @@ export type Effect =
   | { type: "clear" }
   | { type: "open-url"; url: string }
   | { type: "enter-3d" }
+  | { type: "unlock-racer" }
   | { type: "fx"; name: EasterEgg };
 
-export type EasterEgg = "valorant" | "minecraft" | "gta5" | "gta6" | "sudo";
+export type EasterEgg = "valorant" | "minecraft" | "gta5" | "gta6" | "sudo" | "cars";
+
+/** Réponse exacte de la commande secrète `cars`. */
+export const RACER_UNLOCKED =
+  "[RACER MODE UNLOCKED] : Configuration Stock-Car validée. Rendez-vous sur le circuit extérieur pour prendre la piste.";
 
 export interface CommandResult {
   lines: Line[];
@@ -192,7 +199,9 @@ const COMMANDS: CommandDef[] = [
         blank,
         ...p.pillars.map((pl) => line(t(`  ${pl.title}`, "accent"), t(` : ${pl.points.join(", ")}.`))),
         blank,
-        line(t("Une démonstration pédagogique (réalisée pour ce portfolio) est disponible dans la section NetForge.", "muted")),
+        p.liveUrl
+          ? line(t("Plateforme en ligne : ", "muted"), { kind: "link", text: new URL(p.liveUrl).host, href: p.liveUrl })
+          : line(t("Adresse publique non renseignée.", "muted")),
       ]);
     },
   },
@@ -307,6 +316,22 @@ const COMMANDS: CommandDef[] = [
     description: "easter egg",
     hidden: true,
     run: () => out([line("GTA VI m'intéresse aussi beaucoup.")], [{ type: "fx", name: "gta6" }]),
+  },
+  {
+    name: "cars",
+    aliases: ["racer", "nascar"],
+    description: "easter egg",
+    hidden: true,
+    run: (_args, ctx) =>
+      out(
+        [
+          line(t(RACER_UNLOCKED, "ok")),
+          ctx.can3d
+            ? line(t("Le circuit se rejoint par le sas du lab. ", "muted"), { kind: "action", text: "aller au circuit", action: "enter-circuit" })
+            : line(t("Le circuit 3D n'est pas disponible sur ce navigateur (WebGL indisponible).", "warn")),
+        ],
+        [{ type: "unlock-racer" }, { type: "fx", name: "cars" }],
+      ),
   },
   {
     name: "sudo",

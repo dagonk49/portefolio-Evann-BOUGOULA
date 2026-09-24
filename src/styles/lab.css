@@ -72,9 +72,10 @@
   left: max(0.75rem, env(safe-area-inset-left));
   right: calc(max(0.75rem, env(safe-area-inset-right)) + 12.5rem);
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.5rem 1rem;
   pointer-events: none;
 }
 
@@ -1334,5 +1335,404 @@
 @media (max-width: 720px) and (pointer: coarse) {
   .hud-brand {
     display: none;
+  }
+}
+
+.lab-chip--static {
+  cursor: default;
+}
+
+.lab-chip--static:hover {
+  border-color: var(--lab-line);
+  color: inherit;
+}
+
+.lab-quote {
+  margin: 0.9rem 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 3px solid var(--lab-amber);
+  background: rgba(242, 169, 72, 0.08);
+  font-style: italic;
+}
+
+/* ------------------------------------------------------------------
+   Écran de transition entre les mondes
+   ------------------------------------------------------------------ */
+.lt {
+  --lt-neon: #5fd0e0;
+  --lt-amber: #f2a948;
+  --lt-ok: #59e08a;
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background:
+    radial-gradient(80% 60% at 50% 40%, rgba(95, 208, 224, 0.1), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+    #0b0d10;
+  color: #dfe6e8;
+  font-family: var(--font-mono);
+  animation: lt-in 0.35s ease-out both;
+}
+
+.lt[data-world="circuit"] {
+  background:
+    radial-gradient(90% 70% at 50% 110%, rgba(242, 169, 72, 0.22), transparent 70%),
+    radial-gradient(80% 60% at 50% 40%, rgba(95, 208, 224, 0.1), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+    #0b0d10;
+}
+
+.lt.is-done {
+  animation: lt-out 0.6s ease-in 0.3s both;
+  pointer-events: none;
+}
+
+.lt__frame {
+  width: min(44rem, 100%);
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid rgba(95, 208, 224, 0.35);
+  border-radius: 10px;
+  background: rgba(10, 14, 17, 0.9);
+  box-shadow: 0 0 0 1px rgba(95, 208, 224, 0.08), 0 0 40px -10px rgba(95, 208, 224, 0.45);
+  display: grid;
+  gap: 1rem;
+}
+
+.lt__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lt__brand {
+  color: var(--lt-amber);
+}
+
+.lt__title {
+  color: var(--lt-neon);
+}
+
+.lt__gauge {
+  height: 0.7rem;
+  border-radius: 999px;
+  background: #151a1f;
+  border: 1px solid #243038;
+  overflow: hidden;
+}
+
+.lt__gauge span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--lt-neon), var(--lt-amber));
+  box-shadow: 0 0 14px rgba(95, 208, 224, 0.8);
+  transition: width 0.35s ease;
+}
+
+.lt__log {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  font-size: clamp(0.78rem, 1.8vw, 0.92rem);
+}
+
+.lt__log li {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(4rem, 7rem);
+  align-items: center;
+  gap: 0.7rem;
+  color: #6f7a82;
+}
+
+.lt__log li.is-active {
+  color: #eef3f4;
+}
+
+.lt__log li.is-done {
+  color: #b9c4c8;
+}
+
+.lt__log li.is-done .lt__mark {
+  color: var(--lt-ok);
+}
+
+.lt__log li.is-active .lt__mark {
+  color: var(--lt-amber);
+}
+
+.lt__log li:last-child.is-done {
+  color: var(--lt-ok);
+  font-weight: 600;
+  text-shadow: 0 0 12px rgba(89, 224, 138, 0.6);
+}
+
+.lt__mark {
+  white-space: pre;
+}
+
+.lt__detail {
+  color: #8b979f;
+  font-size: 0.85em;
+}
+
+.lt__bar {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: #151a1f;
+  overflow: hidden;
+}
+
+.lt__bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--lt-neon);
+}
+
+.lt__log li.is-active .lt__bar i {
+  width: 100%;
+  background: repeating-linear-gradient(90deg, var(--lt-neon) 0 10px, transparent 10px 18px);
+  animation: lt-stripes 0.6s linear infinite;
+}
+
+.lt__log li.is-done .lt__bar i {
+  width: 100%;
+  background: var(--lt-ok);
+  box-shadow: 0 0 8px rgba(89, 224, 138, 0.7);
+}
+
+.lt__pct {
+  justify-self: end;
+  font-size: 0.8rem;
+  color: var(--lt-neon);
+}
+
+@keyframes lt-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lt-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes lt-stripes {
+  to {
+    background-position: 18px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt,
+  .lt.is-done {
+    animation: none;
+  }
+  .lt__log li.is-active .lt__bar i {
+    animation: none;
+  }
+  .lt__gauge span {
+    transition: none;
+  }
+}
+
+.lab-root[data-reduced="true"] .lt,
+.lab-root[data-reduced="true"] .lt.is-done,
+.lab-root[data-reduced="true"] .lt__log li.is-active .lt__bar i {
+  animation: none;
+}
+
+
+/* ------------------------------------------------------------------
+   Son (barre du haut) et tableau de bord du circuit
+   ------------------------------------------------------------------ */
+.hud-audio {
+  order: 3;
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.hud-audio > * {
+  pointer-events: auto;
+}
+
+.hud-audio__volume {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--lab-line);
+  background: rgba(20, 23, 27, 0.88);
+}
+
+.hud-audio__volume input {
+  width: 6.5rem;
+  accent-color: var(--lab-amber);
+}
+
+.hud-btn[aria-pressed="true"] {
+  border-color: var(--lab-cyan);
+  color: var(--lab-cyan);
+}
+
+.hud-btn--accent {
+  background: var(--lab-amber);
+  border-color: transparent;
+  color: #1a1206;
+  font-weight: 600;
+}
+
+.hud-drive {
+  width: min(21rem, calc(100vw - 1.5rem));
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: rgba(20, 23, 27, 0.9);
+  border: 1px solid var(--lab-line);
+  box-shadow: 0 16px 36px -22px rgba(0, 0, 0, 0.9);
+}
+
+.hud-drive__speed {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+}
+
+.hud-drive__speed p {
+  margin: 0;
+}
+
+.hud-drive__kmh {
+  font-size: 2.3rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--lab-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-drive__unit {
+  font-size: 0.8rem;
+  color: var(--lab-muted);
+}
+
+.hud-drive__bar {
+  grid-column: 1 / -1;
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: #1f2328;
+  overflow: hidden;
+}
+
+.hud-drive__bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--lab-cyan), var(--lab-amber) 70%, #ff5a64);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+.hud-drive__drift {
+  grid-row: 1;
+  grid-column: 2;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--lab-line);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: #4a5158;
+}
+
+.hud-drive__drift[data-on="true"] {
+  color: #ff5a64;
+  border-color: #ff5a64;
+  text-shadow: 0 0 10px rgba(255, 90, 100, 0.7);
+}
+
+.hud-drive__laps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.hud-drive__laps dt {
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lab-muted);
+}
+
+.hud-drive__laps dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.86rem;
+  color: var(--lab-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-drive__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.hud-welcome--circuit {
+  border-color: rgba(242, 169, 72, 0.45);
+}
+
+.hud-welcome {
+  top: 8.6rem;
+}
+
+@media (max-width: 720px) {
+  .hud-audio__label {
+    display: none;
+  }
+  .hud-audio__volume input {
+    width: 4.5rem;
+  }
+  .hud-drive__kmh {
+    font-size: 1.8rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .hud-drive__actions {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .hud-drive {
+    width: min(15rem, calc(100vw - 1.5rem));
+    gap: 0.35rem;
+    padding: 0.5rem 0.7rem;
+  }
+  .hud-drive__laps dd {
+    font-size: 0.78rem;
+  }
+  .hud-drive__laps div:nth-child(2) {
+    display: none;
+  }
+  .hud-drive__laps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

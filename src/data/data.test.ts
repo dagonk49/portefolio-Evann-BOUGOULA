@@ -5,6 +5,7 @@ import {
   contentIndex,
   education,
   experiences,
+  hobbies,
   projects,
   refExists,
   skillById,
@@ -81,11 +82,27 @@ describe("intégrité des données", () => {
     for (const a of anomalies) expect(a.id).toMatch(/^evann\.[a-z]+(\.[a-z0-9-]+)+$/);
   });
 
-  it("NetForge n'a ni lien ni stack inventés", () => {
+  it("NetForge : seulement l'URL fournie, sans stack inventée", () => {
     const nf = projects.find((p) => p.id === "netforge");
-    expect(nf?.links).toEqual([]);
+    expect(nf?.links).toEqual([{ label: "Accéder à la plateforme NetForge (netforge.dagz.fr)", href: "https://netforge.dagz.fr" }]);
+    expect(nf?.liveUrl).toBe("https://netforge.dagz.fr");
+    expect(nf?.badges).toEqual(["Outil en ligne", "IPAM", "Cisco CLI", "VLSM"]);
     expect(nf?.since).toEqual({ year: 2026, month: 5 });
     expect(nf?.pillars).toHaveLength(4);
+    // Aucune technologie de réalisation n'a été fournie : elle n'apparaît nulle part.
+    expect(JSON.stringify(nf)).not.toMatch(/react|next\.js|node|python|django|laravel|php|vue/i);
+  });
+
+  it("loisirs : quatre fiches, uniquement les phrases fournies", () => {
+    expect(hobbies.map((h) => h.id)).toEqual(["valorant", "minecraft", "gta", "cinema-mecanique"]);
+    const all = JSON.stringify(hobbies);
+    // Ni rang, ni temps de jeu, ni plateforme inventés.
+    expect(all).not.toMatch(/rang|rank|heures|plateforme|ps5|xbox|immortal|radiant|diamant/i);
+    expect(hobbies.find((h) => h.id === "gta")?.quote).toBe("Le seul braquage toléré est celui d'une baie mal brassée.");
+    expect(hobbies.find((h) => h.id === "valorant")?.lines.join(" ")).toContain("Duelist ou Initiator, prêt à clutch l'infra");
+    const circuit = anomalies.filter((a) => a.world === "circuit");
+    expect(circuit.map((a) => a.target)).toEqual(hobbies.map((h) => ({ type: "hobby", id: h.id })));
+    expect(circuit.every((a) => /^#[0-9a-f]{6}$/i.test(a.color ?? ""))).toBe(true);
   });
 
   it("l'index couvre tout le parcours", () => {
@@ -93,5 +110,6 @@ describe("intégrité des données", () => {
     expect(idx.filter((c) => c.group === "Expériences")).toHaveLength(5);
     expect(idx.filter((c) => c.group === "Formations")).toHaveLength(2);
     expect(idx.some((c) => c.ref.type === "contact")).toBe(true);
+    expect(idx.filter((c) => c.group === "Loisirs")).toHaveLength(4);
   });
 });

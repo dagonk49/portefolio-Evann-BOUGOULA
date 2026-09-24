@@ -68,10 +68,13 @@ export const projects: Project[] = [
       "Construire des outils utiles à d'autres techniciens et étudiants.",
     ],
     skills: ["computer-networking", "tcp-ip", "vlan", "cisco-ios", "frontend-dev", "backend-dev", "web-apps"],
-    links: [],
+    links: [{ label: "Accéder à la plateforme NetForge (netforge.dagz.fr)", href: "https://netforge.dagz.fr" }],
+    liveUrl: "https://netforge.dagz.fr",
+    badges: ["Outil en ligne", "IPAM", "Cisco CLI", "VLSM"],
     provenance: SOURCE_BRIEF,
     editorialNotes: [
-      "Stack technique, URL, dépôt, captures et état de mise en production non fournis.",
+      "URL de production fournie par Evann (brief v2). Elle n'a pas pu être ouverte depuis l'environnement de développement (proxy réseau).",
+      "Stack technique, dépôt et captures non fournis.",
     ],
   },
   {
@@ -79,7 +82,7 @@ export const projects: Project[] = [
     name: "Ce portfolio — EVANN // ROOT ACCESS",
     kind: "Projet personnel",
     tagline:
-      "Un portfolio en deux modes : une lecture sobre pour aller à l'essentiel, et un lab 3D où l'on remet une petite infrastructure en ligne.",
+      "Un portfolio en deux modes : une lecture sobre pour aller à l'essentiel, et un lab 3D où l'on remet une petite infrastructure en ligne, prolongé par un circuit extérieur dédié à mes loisirs.",
     pillars: [
       {
         id: "modes",
@@ -97,6 +100,15 @@ export const projects: Project[] = [
           "Brassage, VLAN d'accès et adressage IPv4 réellement pris en compte",
           "Diagnostic ipconfig / ping calculé à partir de l'état du lab",
           "Simulation locale : aucune connexion à une infrastructure réelle",
+        ],
+      },
+      {
+        id: "worlds",
+        title: "Deux mondes 3D",
+        points: [
+          "Un sas relie le lab intérieur au circuit extérieur",
+          "Changement de monde avec libération de la mémoire graphique",
+          "Physique de véhicule, drift et bande-son synthétisée",
         ],
       },
     ],

@@ -39,6 +39,8 @@ export type CertificationId = "habilitation-b1v" | "sst" | "cisco-intro-cybersec
 
 export type ProjectId = "netforge" | "portfolio";
 
+export type HobbyId = "valorant" | "minecraft" | "gta" | "cinema-mecanique";
+
 export type SkillFamilyId =
   | "reseaux"
   | "systemes"
@@ -85,7 +87,8 @@ export type ContentRef =
   | { type: "education"; id: EducationId }
   | { type: "certification"; id: CertificationId }
   | { type: "project"; id: ProjectId }
-  | { type: "skill-family"; id: SkillFamilyId };
+  | { type: "skill-family"; id: SkillFamilyId }
+  | { type: "hobby"; id: HobbyId };
 
 export interface Organization {
   id: string;
@@ -218,6 +221,10 @@ export interface Project {
   skills: SkillId[];
   /** Liens publics réels uniquement. Vide tant qu'aucune URL n'est fournie. */
   links: ProjectLink[];
+  /** Adresse de l'application en production, si elle est publiée. */
+  liveUrl?: string;
+  /** Badges courts affichés sur la carte du projet. */
+  badges?: string[];
   provenance: Provenance;
   editorialNotes?: string[];
 }
@@ -269,7 +276,24 @@ export interface Profile {
   provenance: Provenance;
 }
 
-export type ZoneId = "spawn" | "baie" | "bureau" | "cluster" | "parcours";
+export type LabZoneId = "spawn" | "baie" | "bureau" | "cluster" | "parcours" | "sas";
+export type CircuitZoneId = "paddock" | "spot-valorant" | "spot-minecraft" | "spot-gta" | "spot-cinema" | "piste";
+export type ZoneId = LabZoneId | CircuitZoneId;
+
+/** Monde 3D où se trouve un contenu : le lab intérieur ou le circuit extérieur. */
+export type WorldId = "lab" | "circuit";
+
+export interface Hobby {
+  id: HobbyId;
+  title: string;
+  /** Sous-titre court (carte, stèle). */
+  kicker: string;
+  /** Phrases à la première personne, uniquement ce qui a été fourni. */
+  lines: string[];
+  quote?: string;
+  tags: string[];
+  provenance: Provenance;
+}
 
 export type AnomalyId =
   | "evann.profile.about"
@@ -282,13 +306,20 @@ export type AnomalyId =
   | "evann.skills.development"
   | "evann.skills.method"
   | "evann.xp.efs.active-directory"
-  | "evann.skills.support";
+  | "evann.skills.support"
+  | "evann.hobbies.valorant"
+  | "evann.hobbies.minecraft"
+  | "evann.hobbies.gta"
+  | "evann.hobbies.cinema-mecanique";
 
 export interface Anomaly {
   id: AnomalyId;
   /** Nom lisible de l'objet d'où s'échappe l'anomalie. */
   source: string;
+  world: WorldId;
   zone: ZoneId;
+  /** Teinte du cube holographique (cyan par défaut). */
+  color?: string;
   target: ContentRef;
   /** Fragments de code affichés autour de l'anomalie (décor). */
   fragments: string[];

@@ -3,12 +3,11 @@ import { Billboard } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { anomalies } from "@/data/anomalies";
-import type { Anomaly as AnomalyDef } from "@/data/types";
+import type { Anomaly as AnomalyDef, WorldId } from "@/data/types";
 import { useApp } from "@/state/app";
 import { useLabUi } from "@/state/labUi";
 import { ANOMALY_PLACEMENTS } from "../layout";
-import { anomalyVisible } from "../interaction";
+import { anomaliesOf, anomalyVisible } from "../interaction";
 import { cachedMaterial, geo, glow, PALETTE } from "../materials";
 import { particleMaterial } from "../shaders";
 import { Label } from "./primitives";
@@ -53,7 +52,8 @@ function AnomalyObject({ def, reducedMotion, quality }: { def: AnomalyDef; reduc
   const clear = useRef(1);
   const gather = useRef(0);
   const particles = useParticles();
-  const pMat = useMemo(() => particleMaterial(PALETTE.cyan), []);
+  const tint = def.color ?? PALETTE.cyan;
+  const pMat = useMemo(() => particleMaterial(tint), [tint]);
   useEffect(
     () => () => {
       particles.dispose();
@@ -68,7 +68,7 @@ function AnomalyObject({ def, reducedMotion, quality }: { def: AnomalyDef; reduc
     b.dispose();
     return e;
   });
-  const cageMat = cachedMaterial("anomaly:cage", () => new THREE.LineBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.75, toneMapped: false }));
+  const cageMat = cachedMaterial(`anomaly:cage:${tint}`, () => new THREE.LineBasicMaterial({ color: tint, transparent: true, opacity: 0.75, toneMapped: false }));
   const flashGeo = geo("anomaly:flash", () => new THREE.RingGeometry(0.3, 0.36, 32));
   const flashMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PALETTE.amber, transparent: true, opacity: 0, toneMapped: false, side: THREE.DoubleSide, depthWrite: false }), []);
   useEffect(() => () => flashMat.dispose(), [flashMat]);
@@ -121,18 +121,18 @@ function AnomalyObject({ def, reducedMotion, quality }: { def: AnomalyDef; reduc
     pMat.uniforms.uIntensity!.value = viewed ? 0.25 : state === "spotted" ? 1 : 0.7;
   });
 
-  const labelColor = viewed ? PALETTE.offWhite : PALETTE.cyan;
+  const labelColor = viewed ? PALETTE.offWhite : tint;
   const fragments = def.fragments;
   return (
     <group ref={root} position={placement.float}>
-      <mesh ref={core} geometry={coreGeo} material={glow("cyan", 0.92)} />
+      <mesh ref={core} geometry={coreGeo} material={glow(tint, 0.92)} />
       <lineSegments ref={cage} geometry={cageGeo} material={cageMat} />
       <group ref={ring}>
         {fragments.map((f, i) => {
           const a = (i / fragments.length) * Math.PI * 2;
           return (
             <Billboard key={f} position={[Math.cos(a) * 0.95, (i % 2 ? 0.16 : -0.14), Math.sin(a) * 0.95]}>
-              <Label mono fontSize={0.11} color={PALETTE.cyan} fillOpacity={0.85} outlineWidth={0.006} outlineColor="#0d1215">
+              <Label mono fontSize={0.11} color={tint} fillOpacity={0.85} outlineWidth={0.006} outlineColor="#0d1215">
                 {f}
               </Label>
             </Billboard>
@@ -163,11 +163,11 @@ function AnomalyObject({ def, reducedMotion, quality }: { def: AnomalyDef; reduc
   );
 }
 
-export function Anomalies({ reducedMotion, quality }: { reducedMotion: boolean; quality: "high" | "low" }) {
+export function Anomalies({ reducedMotion, quality, world = "lab" }: { reducedMotion: boolean; quality: "high" | "low"; world?: WorldId }) {
   const mission = useApp((s) => s.progress.mission);
   return (
     <group>
-      {anomalies
+      {anomaliesOf(world)
         .filter((a) => anomalyVisible(a.id, mission))
         .map((a) => (
           <AnomalyObject key={a.id} def={a} reducedMotion={reducedMotion} quality={quality} />

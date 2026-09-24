@@ -1,21 +1,21 @@
 # Vérifications exécutées
 
 Environnement : conteneur Linux, Node 22.22, Chromium headless (Playwright 1.63) avec rendu WebGL **logiciel** (SwiftShader).
-Date : septembre 2026.
+Date : septembre 2026 (version 2.0 : NetForge en ligne, sas, circuit extérieur, véhicules, audio).
 
 ## Résultats
 
 | Vérification | Commande / méthode | Résultat |
 | --- | --- | --- |
 | Types | `npm run typecheck` (TypeScript 5.9, `strict`, `noUncheckedIndexedAccess`) | OK, 0 erreur |
-| Tests unitaires | `npm test` (Vitest) | **58 tests / 7 fichiers OK** |
+| Tests unitaires | `npm test` (Vitest) | **72 tests / 8 fichiers OK** |
 | Build | `npm run build` (Next.js 16, export statique) | OK, page `/` pré-rendue en HTML |
-| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **21 tests OK** |
-| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre, thèmes clair et sombre | 0 violation « serious » ou « critical » (clair) ; 0 violation (sombre) |
-| CSP | Console du navigateur, lab lancé, en-têtes de `deploy/` | Aucune violation (après ajout de `blob:` pour le worker du texte 3D) |
-| Image Docker | Build + `docker run --read-only --tmpfs /tmp --cap-drop ALL` | OK : 200 sur `/`, 404 personnalisée, en-têtes de sécurité, gzip, cache immuable sur `/_next/static/` |
-| E2E contre nginx | Sous-ensemble (parcours sobre, axe, mission complète) sur le conteneur | OK |
-| Impression | Émulation `print` dans Chromium | En-tête, boutons, terminal et démo masqués ; parcours lisible en noir sur blanc |
+| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **26 tests OK** |
+| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre | 0 violation « serious » ou « critical » |
+| CSP | Console du navigateur (lab, transition, circuit, audio), en-têtes de `deploy/` | Aucune violation ; `frame-src https://netforge.dagz.fr` ajouté pour l'aperçu à la demande |
+| Audio | État du moteur lu via `window.__lab.state()` | Son coupé par défaut ; intro lancée en mode course (ou bouton si bloquée) ; fichier absent (404 simulé) → musique générée directement |
+| Image Docker | v1 : build + `docker run --read-only --tmpfs /tmp --cap-drop ALL` | OK en v1. **Non reconstruite pour la v2** : `Dockerfile`, `compose.yaml` et `nginx.conf` sont inchangés, seuls les fichiers servis et les en-têtes ont évolué |
+| Impression | Émulation `print` dans Chromium (v1) | En-tête, boutons, terminal masqués ; règles d'impression ajoutées pour la carte NetForge (non réimprimée) |
 
 ### Détail des tests unitaires
 
@@ -30,14 +30,29 @@ Date : septembre 2026.
   LinkedIn, CV, easter eggs et variantes, commande inconnue non interprétée, suggestions, historique, `gui`, autocomplétion.
 - **Données** (`src/data/data.test.ts`) : 26 compétences et leurs intitulés d'origine, 5 expériences dont 3 stages NET4BUSINESS,
   pas de N2 ni de PowerShell attribués à tort, statuts des formations, références toutes résolues, identifiants d'anomalies.
-- **VLSM de la démonstration** (`src/netforge-demo/vlsm.test.ts`) : découpage vérifié à la main (192.168.10.0/26, /27, /28, /30),
-  frontières 62/63 hôtes, erreurs, normalisation, aperçu IOS.
+- **Circuit** (`src/game/circuit/layout.test.ts`) : longueur du stade (4a + 2πR), continuité et tangence du tracé, normale
+  extérieure, projection d'un point sur la piste, dévers nul en ligne droite et maximal au milieu des virages, hauteur du bord
+  extérieur, orientation des objets, piste / infield, dalles du paddock ; **chronométrage** : tour complet validé avec le bon temps,
+  tour coupé par l'infield refusé, ligne franchie à rebours = tour annulé, format des temps.
+- **Musique générée** (`src/audio/synthwave.test.ts`) : boucle de 4 mesures à 96 BPM, grosse caisse sur les temps, caisse claire
+  sur 2 et 4, grille Am – F – C – G, conversion MIDI → Hz.
+- **Données v2** : NetForge limité à l'URL fournie et aux badges, aucune technologie inventée ; loisirs limités aux phrases fournies
+  (ni rang ni temps de jeu), citation GTA exacte, une anomalie colorée par loisir ; index à 4 loisirs.
+- **Terminal v2** : `cars` renvoie exactement « [RACER MODE UNLOCKED] : Configuration Stock-Car validée. Rendez-vous sur le circuit
+  extérieur pour prendre la piste. », effet de déblocage, lien « aller au circuit » (absent sans WebGL), absent de `help` et de
+  l'autocomplétion ; `netforge` renvoie vers la plateforme.
+- **Interactions** : anomalies du lab sur l'île, anomalies du circuit dans l'infield hors piste, points d'intérêt séparés par monde,
+  sas dans les deux sens.
 - **IPv4**, **règles d'interaction du lab** (placements, hystérésis, zones) et **synchronisation des en-têtes** nginx / Node.
 
 ### Parcours vérifiés dans le navigateur (E2E)
 
 - Mode sobre complet sans charger Three.js ni Rapier (aucune requête vers ces chunks tant que le lab n'est pas lancé).
-- Ancres internes toutes existantes ; seul lien externe : le vrai profil LinkedIn.
+- Ancres internes toutes existantes ; liens externes : le vrai profil LinkedIn et `https://netforge.dagz.fr`.
+- **NetForge** : badges, bouton `target="_blank" rel="noopener noreferrer"` avec « ↗ », mention « Maquette illustrative », plus
+  aucune démonstration VLSM ; **aucune requête vers netforge.dagz.fr** tant que l'aperçu en direct n'est pas demandé, puis iframe
+  isolée (`sandbox`, `referrerpolicy="no-referrer"`).
+- **Loisirs** : section « Hors de l'infra » dans la navigation, quatre fiches, textes exacts.
 - Lien d'évitement et focus clavier.
 - **Sans WebGL** : bouton « Explorer mon lab (3D) » signalé indisponible, bascule désactivée, parcours accessible.
 - **Stockage bloqué** : le site fonctionne et l'indique dans le pied de page.
@@ -52,21 +67,39 @@ Date : septembre 2026.
   **bascule de mode** depuis une fiche vers la section correspondante (focus et défilement), retour au lab avec progression et
   position conservées ; Échap ferme la fiche puis ouvre la pause ; index → fiche ; **perte du contexte WebGL** → message et
   retour au mode sobre ; sortie du lab → Canvas démonté, crochets de débogage retirés.
+- **Circuit** : dalle du sas → journal « Déchargement des modules salle serveur... », « Allocation mémoire du circuit... »,
+  « Initialisation du moteur physique... », « Root access granted. » ; nouveau Canvas (compteurs de mémoire WebGL différents) ;
+  arrivée à pied, son coupé, aucune lecture ; kart monté avec E, avance à l'accélérateur, F → freinage puis descente ; retour par le
+  sas du paddock devant la porte du lab. **Mode course** : `cars` dans le terminal, état mémorisé dans le stockage, « aller au
+  circuit » → arrivée en stock-car, son actif, intro lancée, bouton muet et curseur de volume visibles et fonctionnels.
+  **Anomalie du circuit** : fiche Valorant ouverte, compteur « 1/4 ».
 - **Mobile** (émulation Pixel 7) : mode sobre privilégié même si le lab était mémorisé, pas de défilement horizontal,
-  lab lancé avec joystick, boutons Interagir / Sauter et bascule de mode visibles.
+  lab lancé avec joystick, boutons Interagir / Sauter et bascule de mode visibles. Captures du circuit en émulation : barre son,
+  tableau de bord compact, boutons Drift / Descendre.
+
+### Essais manuels scriptés (hors suite E2E)
+
+- Pilote automatique de test (suit l'axe de la piste) : le stock-car boucle la ligne droite, prend le virage relevé à 18–24 m/s et
+  atteint 27 m/s sur la ligne opposée. Sous SwiftShader (≈ 3 images/s), la boucle de contrôle réagit tard et touche parfois le mur
+  à l'entrée du virage : la physique encaisse (le mur retient la voiture, R la remet d'aplomb).
+- Frein à main + braquage à ≈ 20 m/s : décrochage de l'arrière, traces de pneus déposées (16 marques en 1,6 s), tête-à-queue si
+  l'on insiste ; l'adhérence arrière en drift a été relevée ensuite pour rendre la glisse plus contrôlable.
+- Kart : 0 → 17,8 m/s en 2,5 s, marche arrière au frein maintenu.
 
 ## Mesures
 
 | Mesure | Valeur mesurée |
 | --- | --- |
-| HTML de la page | 135 Ko (23 Ko gzip) |
-| JS + CSS chargés à l'arrivée | 696 Ko (211 Ko gzip), dont React/Next.js pour l'essentiel |
-| Chunks du lab, chargés à la demande | 3,35 Mo (1,14 Mo gzip) : Three.js, R3F, drei, Rapier (WASM intégré) |
-| Appels de dessin, qualité haute (accueil / baie) | 369 / 368 (465 / 645 avant la fusion statique des décors) |
-| Appels de dessin, qualité réduite (accueil / baie) | 270 / 290 |
-| Triangles, qualité haute (accueil / baie) | ≈ 20 600 / ≈ 23 000 |
+| HTML de la page | 142 Ko (25 Ko gzip) |
+| JS + CSS chargés à l'arrivée | 729 Ko (220 Ko gzip), dont React/Next.js pour l'essentiel |
+| Chunks 3D, chargés à la demande | 3,50 Mo (1,19 Mo gzip) : Three.js, R3F, drei, Rapier (WASM intégré), lab et circuit |
+| Intro audio (mode course uniquement) | 1,08 Mo (AAC) ou 327 Ko (Opus), téléchargée seulement une fois le mode course activé |
+| Appels de dessin, qualité haute : lab (accueil) / circuit (arrivée) | 385 / 310 |
+| Appels de dessin, qualité réduite : circuit (arrivée) | 189 |
+| Triangles, qualité haute : lab / circuit | ≈ 20 900 / ≈ 20 900 (≈ 13 100 en qualité réduite sur le circuit) |
+| Géométries en mémoire WebGL : lab / circuit après passage du sas | ≈ 110 / ≈ 60 (nouveau contexte, rien du lab ne subsiste) |
 
-Ces chiffres viennent de `renderer.info` via `window.__lab.stats()`.
+Ces chiffres viennent de `renderer.info` via `window.__lab.stats()` et des fichiers de `out/`.
 
 ## Non testé ou limites connues
 
@@ -78,7 +111,14 @@ Ces chiffres viennent de `renderer.info` via `window.__lab.stats()`.
 - **Tactile** : présence des contrôles vérifiée en émulation ; le glisser du joystick n'a pas été testé sur un écran réel.
 - **Clic direct sur les ports en 3D** : implémenté, mais les tests passent par le panneau HTML (même logique `clickPort`).
 - **Lecteurs d'écran** : pas d'essai avec NVDA, JAWS ou VoiceOver ; seulement l'audit automatique axe et la structure sémantique.
-- **Sons** : synthèse Web Audio non écoutée (désactivée par défaut).
+- **Son** : rien n'a été écouté dans cet environnement (pas de sortie audio). Le routage, les états (intro, fondu, musique,
+  blocage, fichier absent) sont vérifiés par programme ; l'équilibre des volumes, le fondu et la boucle synthwave restent à juger
+  à l'oreille. Safari (amorçage silencieux de l'intro) n'a pas été essayé.
+- **Conduite réelle** : la physique des véhicules n'a été éprouvée qu'à ≈ 3 images/s (pas fixe de 1/60 s, donc même résultat
+  physique, mais sans ressenti de pilotage). Le réglage fin (`SPECS`) se fera sur une machine avec GPU.
+- **Droits de l'intro audio** : fichier fourni par Evann, source non documentée (voir `INFOS-MANQUANTES.md`).
+- **NetForge** : `https://netforge.dagz.fr` n'a pas pu être ouvert depuis l'environnement de développement ; le bouton pointe vers
+  l'URL fournie. L'aperçu intégré dépend des en-têtes du site (il peut refuser d'être affiché dans une iframe : le texte le signale).
 - **Bloqueur de fenêtres** : le cas où le navigateur bloque l'onglet Google n'a pas été simulé ; le lien de secours est vérifié.
 - **Docker** : dans ce bac à sable, `npm ci` ne sort qu'à travers un proxy ; le build a donc été vérifié avec une copie
   temporaire du Dockerfile ajoutant uniquement le proxy et son certificat (fichier non commité). Le `Dockerfile` livré n'a pas

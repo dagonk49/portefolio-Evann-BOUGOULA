@@ -81,7 +81,7 @@ export function EducationSection() {
 export function ContactSection() {
   return (
     <section className="section" aria-labelledby="contact">
-      <SectionHeading id="contact" index="07" title="Contact" lead={`Pour échanger sur une alternance, un stage ou un projet d'infrastructure, écrivez-moi${profile.contacts.length === 1 ? ` sur ${profile.contacts[0]!.label}` : ""}.`} />
+      <SectionHeading id="contact" index="08" title="Contact" lead={`Pour échanger sur une alternance, un stage ou un projet d'infrastructure, écrivez-moi${profile.contacts.length === 1 ? ` sur ${profile.contacts[0]!.label}` : ""}.`} />
       <div className="contact">
         {profile.contacts.map((c) => {
           const external = c.href.startsWith("http");

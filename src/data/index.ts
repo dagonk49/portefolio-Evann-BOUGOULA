@@ -2,6 +2,7 @@
  * Point d'entrée unique des données. Les vues n'importent que ce module.
  */
 import { anomalies, anomalyById } from "./anomalies";
+import { hobbies } from "./hobbies";
 import { certifications, education } from "./education";
 import { experiences } from "./experiences";
 import { LINKEDIN_URL, organizations, profile } from "./profile";
@@ -12,6 +13,7 @@ import type {
   ContentRef,
   Education,
   Experience,
+  Hobby,
   Project,
   Skill,
   SkillFamily,
@@ -20,6 +22,7 @@ import type {
 import { formatPeriod } from "@/lib/format";
 
 export {
+  hobbies,
   anomalies,
   anomalyById,
   certifications,
@@ -47,6 +50,9 @@ export function getCertification(id: string): Certification | undefined {
 }
 export function getProject(id: string): Project | undefined {
   return projects.find((p) => p.id === id);
+}
+export function getHobby(id: string): Hobby | undefined {
+  return hobbies.find((h) => h.id === id);
 }
 export function getSkillFamily(id: string): SkillFamily | undefined {
   return skillFamilies.find((f) => f.id === id);
@@ -88,6 +94,8 @@ export function anchorFor(ref: ContentRef): string {
       return `projet-${ref.id}`;
     case "skill-family":
       return `competences-${ref.id}`;
+    case "hobby":
+      return `loisir-${ref.id}`;
   }
 }
 
@@ -95,7 +103,7 @@ export interface ContentSummary {
   ref: ContentRef;
   title: string;
   subtitle: string;
-  group: "Profil" | "Expériences" | "Formations" | "Certifications" | "Compétences" | "Projets" | "Contact";
+  group: "Profil" | "Expériences" | "Formations" | "Certifications" | "Compétences" | "Projets" | "Loisirs" | "Contact";
 }
 
 export function summarize(ref: ContentRef): ContentSummary {
@@ -143,6 +151,10 @@ export function summarize(ref: ContentRef): ContentSummary {
       const f = getSkillFamily(ref.id);
       return { ref, title: f?.label ?? ref.id, subtitle: f?.description ?? "", group: "Compétences" };
     }
+    case "hobby": {
+      const h = getHobby(ref.id);
+      return { ref, title: h?.title ?? ref.id, subtitle: h?.kicker ?? "", group: "Loisirs" };
+    }
   }
 }
 
@@ -156,6 +168,7 @@ export function contentIndex(): ContentSummary[] {
     ...skillFamilies.filter((f) => f.id !== "secourisme").map((f) => ({ type: "skill-family", id: f.id }) as const),
     ...projects.map((p) => ({ type: "project", id: p.id }) as const),
     { type: "homelab" },
+    ...hobbies.map((h) => ({ type: "hobby", id: h.id }) as const),
     { type: "contact" },
   ];
   return refs.map(summarize);
@@ -187,5 +200,7 @@ export function refExists(ref: ContentRef): boolean {
       return !!getProject(ref.id);
     case "skill-family":
       return !!getSkillFamily(ref.id);
+    case "hobby":
+      return !!getHobby(ref.id);
   }
 }

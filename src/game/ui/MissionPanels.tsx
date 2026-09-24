@@ -2,7 +2,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useApp } from "@/state/app";
 import { useLabUi } from "@/state/labUi";
-import { playCue } from "@/lib/sound";
+import { audioEngine } from "@/audio/AudioEngine";
 import { formatIPv4, prefixToMask } from "@/lib/ipv4";
 import {
   cableAt,
@@ -154,7 +154,6 @@ export function BayPanel({ onClose }: { onClose: () => void }) {
 function NicTab() {
   const lab = useApp((s) => s.progress.lab);
   const setPcConfig = useApp((s) => s.setPcConfig);
-  const sound = useApp((s) => s.settings.sound);
   const current = lab.pc;
   const [mode, setMode] = useState<"dhcp" | "static">(current.mode);
   const [ip, setIp] = useState(current.mode === "static" ? formatIPv4(current.ip) : "");
@@ -178,12 +177,12 @@ function NicTab() {
     if (!v.ok) {
       setErrors(v.errors);
       setStatus("Configuration refusée : corrige les champs signalés.");
-      playCue("error", sound);
+      audioEngine.cue("error");
       return;
     }
     setErrors([]);
     setPcConfig(v.config);
-    playCue("plug", sound);
+    audioEngine.cue("plug");
     setStatus(`Configuration appliquée : ${formatIPv4(v.config.ip)}/${v.config.prefix}.`);
   };
 
@@ -352,11 +351,10 @@ function ReportView({ report }: { report: DiagnosticReport }) {
 function DiagTab() {
   const runLabDiagnostic = useApp((s) => s.runLabDiagnostic);
   const lastReport = useApp((s) => s.lastReport);
-  const sound = useApp((s) => s.settings.sound);
   const announce = useLabUi((s) => s.announce);
   const run = () => {
     const r = runLabDiagnostic();
-    playCue(r.success ? "success" : "error", sound);
+    audioEngine.cue(r.success ? "success" : "error");
     announce(r.success ? "Diagnostic réussi : le poste est en ligne." : "Diagnostic : au moins une vérification échoue.");
   };
   return (

@@ -56,6 +56,14 @@ export function EasterEggFx({ name }: { name: EasterEgg }) {
           </svg>
         </div>
       );
+    case "cars":
+      return (
+        <div className="egg egg--cars" aria-hidden="true">
+          <span className="egg-flag" />
+          <span>racer mode</span>
+          <span className="egg-flag" />
+        </div>
+      );
     case "sudo":
       return (
         <div className="egg egg--sudo" aria-hidden="true">

@@ -7,6 +7,7 @@ import {
   certifications,
   getEducation,
   getExperience,
+  getHobby,
   getProject,
   getSkillFamily,
   homelab,
@@ -20,6 +21,7 @@ import {
 import type { AnomalyId, ContentRef, Skill } from "@/data/types";
 import { formatMonth, formatPeriod } from "@/lib/format";
 import { useApp } from "@/state/app";
+import { NetForgeLaunch } from "@/components/NetForgeLaunch";
 import { Dialog, Tabs } from "./Dialog";
 import { openContent } from "./actions";
 
@@ -170,6 +172,7 @@ function NetForgeBody() {
         {p.since ? ` · depuis ${formatMonth(p.since)}` : ""}
       </p>
       <p className="lab-lead">{p.tagline}</p>
+      <NetForgeLaunch variant="lab" />
       <Tabs
         label="Sections NetForge"
         value={tab}
@@ -208,11 +211,31 @@ function NetForgeBody() {
           </>
         )}
       </div>
-      <p className="lab-muted">
-        Une démonstration pédagogique (calcul VLSM et aperçu IOS, réalisée pour ce portfolio) se trouve dans la section NetForge du
-        mode sobre.
-      </p>
       <SkillChips ids={p.skills} />
+    </>
+  );
+}
+
+function HobbyBody({ id }: { id: Parameters<typeof getHobby>[0] }) {
+  const h = getHobby(id);
+  if (!h) return null;
+  return (
+    <>
+      <p className="lab-meta lab-mono">{h.kicker}</p>
+      {h.lines.map((l, i) => (
+        <p key={i} className={i === 0 ? "lab-lead" : undefined}>
+          {l}
+        </p>
+      ))}
+      {h.quote ? <blockquote className="lab-quote">« {h.quote} »</blockquote> : null}
+      <ul className="lab-chips" aria-label="Mots-clés">
+        {h.tags.map((t) => (
+          <li key={t}>
+            <span className="lab-chip lab-chip--static">{t}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="lab-muted">Décor du circuit : clin d&apos;œil stylisé, sans logo ni élément officiel du jeu ou du film.</p>
     </>
   );
 }
@@ -355,6 +378,8 @@ export function ContentPanel({ refTo, anomalyId, onClose }: { refTo: ContentRef;
         return <AboutBody />;
       case "contact":
         return <ContactBody />;
+      case "hobby":
+        return <HobbyBody id={refTo.id} />;
     }
   })();
   return (

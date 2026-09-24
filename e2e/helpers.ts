@@ -7,7 +7,7 @@ export async function seedSettings(page: Page, extra: Record<string, unknown> = 
   const value = JSON.stringify({
     v: 1,
     savedAt: "",
-    data: { modePreference: null, settings: { quality: "low", autoQuality: false, sound: false, effects: false, helpSeen: true }, ...extra },
+    data: { modePreference: null, settings: { quality: "low", autoQuality: false, effects: false, helpSeen: true }, ...extra },
   });
   await page.addInitScript(
     ([key, v]) => {
@@ -25,6 +25,16 @@ export async function enterLab(page: Page) {
   await page.locator(".hud").waitFor({ timeout: 90_000 });
   // Laisse quelques images au moteur physique (rendu logiciel lent).
   await page.waitForFunction(() => !!window.__lab, null, { timeout: 30_000 });
+  await waitIdle(page);
+}
+
+/** Attend la fin de l'écran de démarrage ou de transition entre mondes. */
+export async function waitIdle(page: Page, world?: "lab" | "circuit") {
+  await page.waitForFunction(
+    (w) => !!window.__lab && window.__lab.state().travel === null && (!w || window.__lab.state().world === w),
+    world,
+    { timeout: 120_000 },
+  );
 }
 
 export async function teleport(page: Page, x: number, z: number) {

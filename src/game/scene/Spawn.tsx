@@ -80,6 +80,7 @@ export function Signpost() {
     { text: "Bureau", angle: 0, color: PALETTE.amberDeep },
     { text: "HomeLab", angle: Math.PI * 0.72, color: PALETTE.graphite },
     { text: "Parcours", angle: Math.PI * 0.28, color: PALETTE.graphite },
+    { text: "Circuit", angle: Math.PI * 0.52, color: PALETTE.amberDeep },
   ];
   return (
     <group position={base}>
