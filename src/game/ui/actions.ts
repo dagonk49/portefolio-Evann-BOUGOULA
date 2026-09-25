@@ -16,6 +16,13 @@ import { BOARD_DISTANCE, EXIT_MAX_SPEED, VEHICLE_LABEL, vehicleInteractables, ve
 
 const STABILIZE_MS = 1100;
 let stabilizeTimer: number | undefined;
+let stabilizeStartedAt = 0;
+
+/** Garde-fou : une stabilisation dont le minuteur aurait été perdu ne bloque jamais les interactions. */
+function releaseStaleStabilizing(): void {
+  const ui = useLabUi.getState();
+  if (ui.stabilizing && performance.now() - stabilizeStartedAt > STABILIZE_MS + 1500) ui.setStabilizing(null);
+}
 
 /** Points d'intérêt du monde courant, véhicules garés compris. */
 export function currentInteractables() {
@@ -26,11 +33,14 @@ export function currentInteractables() {
 }
 
 export function interactWith(id: string): void {
+  releaseStaleStabilizing();
   const app = useApp.getState();
   const ui = useLabUi.getState();
   if (ui.panel || ui.stabilizing || ui.travel || ui.travelRequest) return;
   const item = currentInteractables().find((i) => i.id === id);
   if (!item) return;
+  // Première interaction réussie dans le lab : le tutoriel d'accueil a rempli son rôle.
+  if (app.world === "lab" && app.settings.tutorial === "pending") app.updateSettings({ tutorial: "done" });
   switch (item.action.type) {
     case "travel":
       // Geste du visiteur : bon moment pour déverrouiller l'audio du circuit.
@@ -75,6 +85,7 @@ export function stabilize(id: AnomalyId): void {
   }
   const duration = prefersReducedMotion() ? 0 : STABILIZE_MS;
   ui.setStabilizing(id);
+  stabilizeStartedAt = performance.now();
   useLabUi.setState({ focus });
   audioEngine.cue("stabilize");
   window.clearTimeout(stabilizeTimer);

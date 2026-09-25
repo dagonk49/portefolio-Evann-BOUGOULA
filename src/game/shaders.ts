@@ -4,6 +4,7 @@
  * `uMotion` = 0 les fige (réduction des mouvements).
  */
 import * as THREE from "three";
+import { GLOW_UNIFORM } from "./materials";
 
 export function padMaterial(color: THREE.ColorRepresentation): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
@@ -14,6 +15,7 @@ export function padMaterial(color: THREE.ColorRepresentation): THREE.ShaderMater
       uActive: { value: 0 },
       uMotion: { value: 1 },
       uColor: { value: new THREE.Color(color) },
+      uGlow: GLOW_UNIFORM,
     },
     vertexShader: /* glsl */ `
       varying vec2 vUv;
@@ -27,6 +29,7 @@ export function padMaterial(color: THREE.ColorRepresentation): THREE.ShaderMater
       uniform float uActive;
       uniform float uMotion;
       uniform vec3 uColor;
+      uniform float uGlow;
       varying vec2 vUv;
       float line(float d, float w) { return 1.0 - smoothstep(0.0, w, abs(d)); }
       void main() {
@@ -42,7 +45,10 @@ export function padMaterial(color: THREE.ColorRepresentation): THREE.ShaderMater
         float fill = 0.08 + 0.1 * uActive;
         float a = fill + ring * 0.85 + diamond * (0.55 + 0.4 * uActive) + pulse * 0.45 * uActive;
         float breathe = 0.82 + 0.18 * sin(t * 2.2);
-        gl_FragColor = vec4(uColor * (1.0 + uActive * 0.6), a * mix(0.6, 1.0, uActive) * breathe);
+        // Seuls les traits néon (losange, cercle, impulsions) reçoivent l'intensité « bloom ».
+        float neon = clamp(ring + diamond + pulse * uActive, 0.0, 1.0);
+        vec3 col = uColor * (1.0 + uActive * 0.6) * mix(1.0, uGlow, neon);
+        gl_FragColor = vec4(col, a * mix(0.6, 1.0, uActive) * breathe);
       }
     `,
   });
@@ -59,6 +65,7 @@ export function flowMaterial(color: THREE.ColorRepresentation, repeat = 6): THRE
       uRepeat: { value: repeat },
       uColor: { value: new THREE.Color(color) },
       uOpacity: { value: 0 },
+      uGlow: GLOW_UNIFORM,
     },
     vertexShader: /* glsl */ `
       varying vec2 vUv;
@@ -73,13 +80,14 @@ export function flowMaterial(color: THREE.ColorRepresentation, repeat = 6): THRE
       uniform float uRepeat;
       uniform float uOpacity;
       uniform vec3 uColor;
+      uniform float uGlow;
       varying vec2 vUv;
       void main() {
         // Paquets qui avancent le long du câble (u = abscisse curviligne).
         float d = fract(vUv.x * uRepeat - uTime * 0.6 * uMotion);
         float packet = smoothstep(0.0, 0.06, d) * (1.0 - smoothstep(0.18, 0.26, d));
         float steady = 0.18 * (1.0 - uMotion);
-        gl_FragColor = vec4(uColor, (packet * uMotion + steady) * uOpacity);
+        gl_FragColor = vec4(uColor * mix(1.0, uGlow, packet), (packet * uMotion + steady) * uOpacity);
       }
     `,
   });

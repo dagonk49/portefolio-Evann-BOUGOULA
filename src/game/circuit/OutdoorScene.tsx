@@ -15,7 +15,7 @@ import { ActivePrompt, Pads } from "../scene/Pads";
 import { StaticBatch } from "../scene/StaticBatch";
 import { CircuitEnvironment } from "./CircuitEnvironment";
 import { CircuitProps } from "./CircuitProps";
-import { CoveredStockCar, Paddock } from "./Paddock";
+import { Paddock } from "./Paddock";
 import { SkidMarks } from "./SkidMarks";
 import { Spots } from "./Spots";
 import { Track } from "./Track";
@@ -105,9 +105,9 @@ export function OutdoorScene({ reducedMotion, quality, paused }: { reducedMotion
         <Paddock />
         <Spots reducedMotion={reducedMotion} />
       </StaticBatch>
-      {nascar ? null : <CoveredStockCar />}
       <CircuitProps />
       <Vehicle kind="kart" spawn={KART_SPAWN} yaw={0} paused={paused} onLap={onLap} />
+      {/* Stock-car : monté seulement après la commande `cars` (aucun modèle ni collider sinon). */}
       {nascar ? <Vehicle kind="stockcar" spawn={STOCKCAR_SPAWN} yaw={STOCKCAR_YAW} paused={paused} onLap={onLap} /> : null}
       <SkidMarks />
       <Pads reducedMotion={reducedMotion} items={CIRCUIT_INTERACTABLES} />

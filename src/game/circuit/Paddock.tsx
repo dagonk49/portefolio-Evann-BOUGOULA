@@ -7,7 +7,7 @@ import { useLabUi } from "@/state/labUi";
 import { cachedMaterial, glow, PALETTE } from "../materials";
 import { canvasTexture } from "../textures";
 import { B, Glow, Label } from "../scene/primitives";
-import { headingAt, KART_SPOT, PADDOCK, SAS_DOOR, STOCKCAR_GRID, trackPoint } from "./layout";
+import { KART_SPOT, PADDOCK, SAS_DOOR } from "./layout";
 
 /** Vue peinte de l'intérieur : la salle serveur du lab. */
 function drawServerRoom(ctx: CanvasRenderingContext2D, w: number, h: number) {
@@ -172,40 +172,12 @@ function KartBay() {
   );
 }
 
-/** Stock-car sous bâche tant que le mode course n'est pas débloqué. */
-export function CoveredStockCar() {
-  const p = trackPoint(STOCKCAR_GRID.s, STOCKCAR_GRID.d);
-  const yaw = headingAt(STOCKCAR_GRID.s);
-  const tarp = cachedMaterial("tarp", () => new THREE.MeshStandardMaterial({ color: "#3d4d63", roughness: 0.95 }));
-  return (
-    <group position={p} rotation={[0, yaw, 0]}>
-      <B p={[0, 0.55, 0]} s={[4.0, 1.1, 1.9]} m={tarp} />
-      <B p={[-0.2, 1.3, 0]} s={[1.8, 0.5, 1.6]} m={tarp} />
-      <B p={[-1.8, 1.02, 0]} s={[0.4, 0.14, 1.9]} m={tarp} />
-      <B p={[0.6, 1.12, 0]} s={[0.8, 0.06, 0.4]} m="#d3272e" />
-      <group position={[0, 0, -2.0]} rotation={[0, 0, 0]}>
-        <B p={[0, 0.7, 0]} s={[0.08, 1.4, 0.08]} m="aluDark" />
-        <B p={[0, 1.45, 0]} s={[2.2, 0.62, 0.05]} m="graphiteDark" />
-        <Label mono position={[0, 1.55, 0.03]} fontSize={0.13} color={PALETTE.amber}>
-          STOCK-CAR N°49 · SOUS BÂCHE
-        </Label>
-        <Label mono position={[0, 1.34, 0.03]} fontSize={0.085} color={PALETTE.offWhite}>
-          Déblocage : une commande secrète du terminal
-        </Label>
-      </group>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[2.0, 0.8, 0.95]} position={[0, 0.8, 0]} />
-      </RigidBody>
-    </group>
-  );
-}
-
 export function Paddock() {
   return (
     <group>
       <SasBuilding />
       <Garage cx={-7.2} label="STANDS · KART" />
-      <Garage cx={7.2} label="STANDS · N°49" />
+      <Garage cx={7.2} label="STANDS · ATELIER" />
       <KartBay />
       {/* Mât et drapeau à damier */}
       <B p={[11.4, 3, 12.8]} s={[0.1, 6, 0.1]} m="alu" />

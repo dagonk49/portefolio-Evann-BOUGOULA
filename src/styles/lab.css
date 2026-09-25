@@ -296,37 +296,6 @@
   color: var(--lab-muted);
 }
 
-.hud-welcome {
-  position: absolute;
-  left: 50%;
-  top: 5.5rem;
-  transform: translateX(-50%);
-  width: min(30rem, calc(100vw - 1.5rem));
-  padding: 1rem 1.1rem;
-  border-radius: 12px;
-  background: rgba(20, 23, 27, 0.94);
-  border: 1px solid var(--lab-line);
-  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.8);
-}
-
-.hud-welcome h2 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-}
-
-.hud-welcome p {
-  font-size: 0.9rem;
-  color: var(--lab-muted);
-  margin-bottom: 0.4rem;
-}
-
-.hud-welcome__actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.6rem;
-  flex-wrap: wrap;
-}
-
 .hud-toast {
   position: absolute;
   left: 50%;
@@ -1312,9 +1281,6 @@
 }
 
 @media (max-width: 720px) {
-  .hud-welcome {
-    top: 7.2rem;
-  }
   .hud-top {
     right: max(0.75rem, env(safe-area-inset-right));
     top: 3.6rem;
@@ -1556,36 +1522,6 @@
 /* ------------------------------------------------------------------
    Son (barre du haut) et tableau de bord du circuit
    ------------------------------------------------------------------ */
-.hud-audio {
-  order: 3;
-  flex-basis: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-  pointer-events: none;
-}
-
-.hud-audio > * {
-  pointer-events: auto;
-}
-
-.hud-audio__volume {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.5rem;
-  padding: 0 0.7rem;
-  border-radius: 999px;
-  border: 1px solid var(--lab-line);
-  background: rgba(20, 23, 27, 0.88);
-}
-
-.hud-audio__volume input {
-  width: 6.5rem;
-  accent-color: var(--lab-amber);
-}
-
 .hud-btn[aria-pressed="true"] {
   border-color: var(--lab-cyan);
   color: var(--lab-cyan);
@@ -1694,21 +1630,9 @@
   gap: 0.4rem;
 }
 
-.hud-welcome--circuit {
-  border-color: rgba(242, 169, 72, 0.45);
-}
 
-.hud-welcome {
-  top: 8.6rem;
-}
 
 @media (max-width: 720px) {
-  .hud-audio__label {
-    display: none;
-  }
-  .hud-audio__volume input {
-    width: 4.5rem;
-  }
   .hud-drive__kmh {
     font-size: 1.8rem;
   }
@@ -1735,4 +1659,316 @@
   .hud-drive__laps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* ------------------------------------------------------------------
+   Engrenage « Options » et fenêtre d'options
+   ------------------------------------------------------------------ */
+.hud-btn--gear {
+  border-color: rgba(242, 169, 72, 0.45);
+}
+
+.hud-gear {
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--lab-amber);
+  transition: transform 0.4s ease;
+}
+
+.hud-btn--gear:hover .hud-gear {
+  transform: rotate(60deg);
+}
+
+.hud-audio-blocked {
+  position: absolute;
+  top: 3.6rem;
+  right: max(0.75rem, env(safe-area-inset-right));
+}
+
+.opt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 1.2rem 1.6rem;
+}
+
+.opt-section {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+}
+
+.opt-section--controls {
+  grid-row: span 2;
+  grid-column: 2;
+}
+
+.opt-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* La case réelle couvre tout l'interrupteur (zone de clic généreuse), invisible. */
+.opt-switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.opt-switch__track {
+  position: relative;
+  width: 2.6rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background: #2a3036;
+  border: 1px solid var(--lab-line);
+  transition: background 0.2s ease;
+}
+
+.opt-switch__track::after {
+  content: "";
+  position: absolute;
+  top: 0.14rem;
+  left: 0.16rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: #cfd5da;
+  transition: transform 0.2s ease;
+}
+
+.opt-switch input:checked + .opt-switch__track {
+  background: var(--lab-cyan);
+}
+
+.opt-switch input:checked + .opt-switch__track::after {
+  transform: translateX(1.12rem);
+  background: #0c1114;
+}
+
+.opt-switch input:focus-visible + .opt-switch__track {
+  outline: 2px solid var(--lab-amber);
+  outline-offset: 3px;
+}
+
+.opt-slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.8rem;
+  align-items: center;
+}
+
+.opt-slider label {
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+}
+
+.opt-slider input {
+  width: 100%;
+  accent-color: var(--lab-amber);
+}
+
+.opt-slider output {
+  min-width: 3.2rem;
+  text-align: right;
+  font-size: 0.82rem;
+  color: var(--lab-muted);
+}
+
+.opt-slider.is-dimmed input {
+  opacity: 0.5;
+}
+
+.opt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.opt-controls__title {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lab-amber);
+  margin-bottom: 0.35rem;
+}
+
+.opt-controls dl {
+  margin: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.opt-controls dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.28rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.opt-controls dt {
+  font-size: 0.88rem;
+}
+
+.opt-controls dd {
+  margin: 0;
+}
+
+.opt-keys {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.opt-keys .lab-kbd {
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.opt-keys__sep {
+  font-size: 0.75rem;
+  color: var(--lab-muted);
+  padding: 0 0.15rem;
+}
+
+.opt-quality {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.opt-quality legend {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.opt-quality label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.opt-quality input {
+  margin-top: 0.2rem;
+  accent-color: var(--lab-amber);
+}
+
+@media (max-width: 900px) {
+  .opt-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .opt-section--controls {
+    grid-row: auto;
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .hud-gear__label,
+  .hud-btn--gear .lab-kbd {
+    display: none;
+  }
+  .hud-audio-blocked {
+    top: 6.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-gear,
+  .opt-switch__track,
+  .opt-switch__track::after {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Bandeau de tutoriel (non bloquant)
+   ------------------------------------------------------------------ */
+.hud-guide {
+  position: absolute;
+  right: max(0.9rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  width: min(34rem, calc(100vw - 1.5rem));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  background: rgba(20, 23, 27, 0.9);
+  border: 1px solid rgba(242, 169, 72, 0.4);
+  box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.9);
+  animation: guide-in 0.35s ease-out both;
+}
+
+.hud-guide__text {
+  flex: 1 1 18rem;
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--lab-ink);
+}
+
+.hud-guide__text strong {
+  color: var(--lab-amber);
+}
+
+.hud-guide__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.hud-guide__actions .lab-btn {
+  min-height: 2.2rem;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Petit écran ou tactile : le bas de l'écran appartient au joystick et aux boutons. */
+@media (max-width: 900px), (pointer: coarse) {
+  .hud-guide {
+    right: auto;
+    left: 50%;
+    bottom: auto;
+    top: 7.4rem;
+    transform: translateX(-50%);
+  }
+  @keyframes guide-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-guide {
+    animation: none;
+  }
+}
+
+.lab-root[data-reduced="true"] .hud-guide {
+  animation: none;
 }

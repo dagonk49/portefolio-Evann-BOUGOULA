@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { lastInputWasPointer } from "./inputModality";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
@@ -33,6 +34,8 @@ export function Dialog({
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
+    // Ouverte à la souris ou au doigt (bouton du HUD, clic dans l'index) : le focus reviendra au jeu.
+    const openedByPointer = lastInputWasPointer();
     const node = ref.current;
     // Focus sur l'action principale si elle est désignée, sinon sur la fenêtre (son titre est annoncé).
     const first = node?.querySelector<HTMLElement>("[data-autofocus]");
@@ -71,9 +74,13 @@ export function Dialog({
     document.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("keydown", onKey, true);
-      const fallback = document.querySelector<HTMLElement>(".lab-root");
-      if (previous && document.contains(previous) && previous !== document.body) previous.focus({ preventScroll: true });
-      else fallback?.focus({ preventScroll: true });
+      // Retour du focus : au déclencheur si la fenêtre a été ouverte au clavier depuis un contrôle encore présent,
+      // sinon à la surface de jeu. Jamais sur un bouton du HUD cliqué à la souris : Entrée ou Espace, pensés pour
+      // interagir ou sauter, rouvriraient l'ancienne interface au lieu de la dalle où l'on se trouve.
+      const root = document.querySelector<HTMLElement>(".lab-root");
+      const keepTrigger = !openedByPointer && previous && previous !== document.body && document.contains(previous) && !previous.closest("[role='dialog']");
+      if (keepTrigger) previous.focus({ preventScroll: true });
+      else root?.focus({ preventScroll: true });
     };
   }, []);
 

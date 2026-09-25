@@ -1,21 +1,41 @@
 # Vérifications exécutées
 
 Environnement : conteneur Linux, Node 22.22, Chromium headless (Playwright 1.63) avec rendu WebGL **logiciel** (SwiftShader).
-Date : septembre 2026 (version 2.0 : NetForge en ligne, sas, circuit extérieur, véhicules, audio).
+Date : septembre 2026 (version 2.1 : correctif des interfaces bloquées, options, tutoriel, stock-car masqué, post-traitement ;
+la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicules et l'audio).
 
 ## Résultats
 
 | Vérification | Commande / méthode | Résultat |
 | --- | --- | --- |
 | Types | `npm run typecheck` (TypeScript 5.9, `strict`, `noUncheckedIndexedAccess`) | OK, 0 erreur |
-| Tests unitaires | `npm test` (Vitest) | **72 tests / 8 fichiers OK** |
+| Tests unitaires | `npm test` (Vitest) | **76 tests / 9 fichiers OK** |
 | Build | `npm run build` (Next.js 16, export statique) | OK, page `/` pré-rendue en HTML |
-| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **26 tests OK** |
-| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre | 0 violation « serious » ou « critical » |
+| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | v2.1 : `interfaces.spec.ts` (4 tests) et `circuit.spec.ts` OK ; suite complète en cours au moment du commit |
+| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre ; v2.1 : HUD du lab avec tutoriel, fenêtre Options | 0 violation « serious » ou « critical » (mode sobre) ; 0 violation (HUD, Options) |
 | CSP | Console du navigateur (lab, transition, circuit, audio), en-têtes de `deploy/` | Aucune violation ; `frame-src https://netforge.dagz.fr` ajouté pour l'aperçu à la demande |
 | Audio | État du moteur lu via `window.__lab.state()` | Son coupé par défaut ; intro lancée en mode course (ou bouton si bloquée) ; fichier absent (404 simulé) → musique générée directement |
 | Image Docker | v1 : build + `docker run --read-only --tmpfs /tmp --cap-drop ALL` | OK en v1. **Non reconstruite pour la v2** : `Dockerfile`, `compose.yaml` et `nginx.conf` sont inchangés, seuls les fichiers servis et les en-têtes ont évolué |
 | Impression | Émulation `print` dans Chromium (v1) | En-tête, boutons, terminal masqués ; règles d'impression ajoutées pour la carte NetForge (non réimprimée) |
+
+### Version 2.1
+
+- **Bug des interfaces bloquées, reproduit puis corrigé.** Reproduction : cliquer « Aide » dans le HUD, fermer, se placer sur la
+  dalle du poste et appuyer sur Entrée → l'aide se rouvrait au lieu du poste (le bouton du HUD avait gardé le focus ; Espace
+  faisait de même). Cause : retour du focus au déclencheur d'une fenêtre ouverte à la souris, et point actif conservé après la
+  fermeture. Correctif vérifié par `e2e/interfaces.spec.ts` : focus rendu au jeu, Entrée ouvre le poste, Espace n'ouvre rien,
+  une autre dalle ouvre sa propre interface, point actif recalculé dès la fermeture. Les points d'intérêt étaient déjà détectés
+  à la distance réelle (aucun événement d'entrée / sortie de collider) ; des garde-fous empêchent désormais une stabilisation
+  ou un changement de monde interrompu de verrouiller le jeu.
+- **Options** : engrenage du HUD et touche O, bascule du son, volumes musique / effets persistés, qualité conservée.
+- **Tutoriel** : texte exact, déplacement possible pendant l'affichage, « Ignorer » persistant après rechargement,
+  « Compris » valable pour la session.
+- **Stock-car** : sans `cars`, seul le kart existe dans la scène (`window.__lab.state().vehicles`) ; après `cars`, kart et stock-car.
+- **Migrations du stockage** (`src/state/app.test.ts`) : ancienne carte de bienvenue vue → tutoriel terminé, ancien réglage
+  de son v1 et volume unique v2.0 repris, valeurs invalides rejetées.
+- **Rendu** : comparaison qualité élevée / basse au même endroit. Premier réglage du bloom (seuil 1) écarté : avant tone mapping,
+  les surfaces éclairées dépassent déjà une luminance de 2 et tout le sol brillait. Seuil retenu 2,8, néons poussés à 6,5 × :
+  seuls dalles, LED, liserés, cœurs d'anomalie, phares et soleil ont un halo ; le sol garde sa texture.
 
 ### Détail des tests unitaires
 
@@ -92,14 +112,15 @@ Date : septembre 2026 (version 2.0 : NetForge en ligne, sas, circuit extérieur,
 | --- | --- |
 | HTML de la page | 142 Ko (25 Ko gzip) |
 | JS + CSS chargés à l'arrivée | 729 Ko (220 Ko gzip), dont React/Next.js pour l'essentiel |
-| Chunks 3D, chargés à la demande | 3,50 Mo (1,19 Mo gzip) : Three.js, R3F, drei, Rapier (WASM intégré), lab et circuit |
+| Chunks 3D, chargés à la demande | 3,68 Mo (1,24 Mo gzip) : Three.js, R3F, drei, Rapier (WASM intégré), postprocessing, lab et circuit |
 | Intro audio (mode course uniquement) | 1,08 Mo (AAC) ou 327 Ko (Opus), téléchargée seulement une fois le mode course activé |
-| Appels de dessin, qualité haute : lab (accueil) / circuit (arrivée) | 385 / 310 |
-| Appels de dessin, qualité réduite : circuit (arrivée) | 189 |
+| Appels de dessin par image, qualité élevée (post-traitement compris) : lab (baie) / circuit (arrivée) | 360 / ≈ 330 |
+| Appels de dessin par image, qualité basse : lab (baie) | 313 |
 | Triangles, qualité haute : lab / circuit | ≈ 20 900 / ≈ 20 900 (≈ 13 100 en qualité réduite sur le circuit) |
 | Géométries en mémoire WebGL : lab / circuit après passage du sas | ≈ 110 / ≈ 60 (nouveau contexte, rien du lab ne subsiste) |
 
-Ces chiffres viennent de `renderer.info` via `window.__lab.stats()` et des fichiers de `out/`.
+Ces chiffres viennent de `renderer.info` via `window.__lab.stats()` (compteurs cumulés sur l'image entière depuis la v2.1)
+et des fichiers de `out/`.
 
 ## Non testé ou limites connues
 

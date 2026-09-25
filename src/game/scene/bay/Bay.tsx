@@ -8,7 +8,7 @@ import { useLabUi } from "@/state/labUi";
 import { labOnline } from "@/sim/diagnostics";
 import { linkStatus, portConfig, type ActiveEndpoint } from "@/sim/network";
 import { ENDPOINT_BY_ID, type EndpointId, type SwitchPortId } from "@/sim/scenario";
-import { cachedMaterial, geo, glow, mat, PALETTE, unitBox } from "../../materials";
+import { cachedMaterial, geo, glow, mat, PALETTE, unitBox, registerGlow } from "../../materials";
 import { canvasTexture } from "../../textures";
 import { PLATFORMS, RACK_LAB, RACK_UNITS } from "../../layout";
 import { B, Glow, Label } from "../primitives";
@@ -259,7 +259,8 @@ function DecorRack({ z, name, variant, reducedMotion }: { z: number; name: strin
     }
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   });
-  const ledMat = cachedMaterial("decor:led", () => new THREE.MeshBasicMaterial({ toneMapped: false }));
+  // LED d'activité des serveurs décoratifs : néons (bloom en qualité haute).
+  const ledMat = cachedMaterial("decor:led", () => registerGlow(new THREE.MeshBasicMaterial({ toneMapped: false })));
   return (
     <group position={[RACK_LAB.x, BASE_Y, z]} rotation={[0, Math.PI / 2, 0]}>
       <RackFrame>

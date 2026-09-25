@@ -1,4 +1,5 @@
 "use client";
+import { Environment as EnvMap, Lightformer } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -98,8 +99,14 @@ export function CircuitEnvironment({ shadows }: { shadows: boolean }) {
       <color attach="background" args={[HORIZON]} />
       <fog attach="fog" args={[HORIZON, 70, 175]} />
       <mesh ref={sky} geometry={geometry} material={material} frustumCulled={false} renderOrder={-10} />
-      <hemisphereLight args={["#ffd2a6", "#5c6d3c", 1.15]} />
-      <ambientLight color="#ffb88a" intensity={0.22} />
+      {/* Reflets d'heure dorée (carrosserie, jantes, rails) : ciel chaud et soleil bas, calculés une fois. */}
+      <EnvMap frames={1} resolution={128} environmentIntensity={0.25}>
+        <Lightformer form="rect" intensity={1.6} color="#e58aa2" position={[0, 8, 0]} scale={[20, 20, 1]} />
+        <Lightformer form="circle" intensity={4} color="#ffd9a0" position={[SUN_DIR.x * 10, SUN_DIR.y * 10, SUN_DIR.z * 10]} scale={2.4} />
+        <Lightformer form="rect" intensity={1.2} color="#f4b98c" position={[0, 1, -10]} scale={[30, 2, 1]} />
+      </EnvMap>
+      <hemisphereLight args={["#ffd2a6", "#5c6d3c", 1.08]} />
+      <ambientLight color="#ffb88a" intensity={0.18} />
       <directionalLight
         ref={light}
         color="#ffc27d"

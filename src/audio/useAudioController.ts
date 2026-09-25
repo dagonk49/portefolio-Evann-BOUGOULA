@@ -19,14 +19,25 @@ export function useAudioController() {
   return {
     ...status,
     muted: audio.muted,
-    volume: audio.volume,
+    music: audio.music,
+    sfx: audio.sfx,
     toggleMute: () => {
       audioEngine.unlock();
       setAudio({ muted: !audio.muted });
     },
-    setVolume: (v: number) => {
+    setMuted: (muted: boolean) => {
       audioEngine.unlock();
-      setAudio({ volume: v, muted: v === 0 ? true : false });
+      setAudio({ muted });
+    },
+    /** Monter un curseur rétablit le son s'il était coupé. */
+    setMusic: (v: number) => {
+      audioEngine.unlock();
+      setAudio(v > 0 && audio.muted ? { music: v, muted: false } : { music: v });
+    },
+    setSfx: (v: number) => {
+      audioEngine.unlock();
+      setAudio(v > 0 && audio.muted ? { sfx: v, muted: false } : { sfx: v });
+      audioEngine.cue("open");
     },
     toggleMusic: () => {
       audioEngine.unlock();

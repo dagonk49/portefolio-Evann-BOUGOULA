@@ -67,8 +67,11 @@ class AudioEngine {
   private nextStepTime = 0;
   private step = 0;
   private engine: { osc: OscillatorNode; sub: OscillatorNode; filter: BiquadFilterNode; gain: GainNode } | null = null;
+  /** Niveaux réglés par le visiteur : musique (BGM) et effets + voix (SFX). */
+  private musicLevel: GainNode | null = null;
+  private fxLevel: GainNode | null = null;
   private muted = true;
-  private volume = 0.7;
+  private levels = { music: 0.7, sfx: 0.8 };
 
   private ensure(): AudioContext | null {
     if (this.ctx) return this.ctx;
@@ -83,16 +86,19 @@ class AudioEngine {
       compressor.threshold.value = -14;
       compressor.ratio.value = 3;
       master.connect(compressor).connect(ctx.destination);
-      const bus = (g: number) => {
+      const bus = (g: number, out: AudioNode = master) => {
         const node = ctx.createGain();
         node.gain.value = g;
-        node.connect(master);
+        node.connect(out);
         return node;
       };
-      this.voice = bus(1);
-      this.music = bus(0);
-      this.sfx = bus(0.9);
-      this.engineBus = bus(0.8);
+      // Deux niveaux réglables : musique d'un côté, effets / moteur / voix de l'intro de l'autre.
+      this.musicLevel = bus(this.levels.music);
+      this.fxLevel = bus(this.levels.sfx);
+      this.voice = bus(1, this.fxLevel);
+      this.music = bus(0, this.musicLevel);
+      this.sfx = bus(0.9, this.fxLevel);
+      this.engineBus = bus(0.8, this.fxLevel);
       // Écho discret pour l'arpège (croche pointée).
       const delay = ctx.createDelay(1);
       delay.delayTime.value = STEP_SECONDS * 3;
@@ -162,20 +168,25 @@ class AudioEngine {
     return el;
   }
 
-  configure({ muted, volume }: { muted: boolean; volume: number }): void {
+  configure({ muted, music, sfx }: { muted: boolean; music: number; sfx: number }): void {
+    const clamp = (v: number) => Math.min(1, Math.max(0, v));
     this.muted = muted;
-    this.volume = Math.min(1, Math.max(0, volume));
+    this.levels = { music: clamp(music), sfx: clamp(sfx) };
     this.applyGain(false);
     if (!muted && this.ctx?.state === "suspended") void this.ctx.resume();
   }
 
   private applyGain(immediate: boolean): void {
     if (!this.master || !this.ctx) return;
-    const target = this.muted ? 0 : this.volume;
-    const g = this.master.gain;
-    g.cancelScheduledValues(this.ctx.currentTime);
-    if (immediate) g.setValueAtTime(target, this.ctx.currentTime);
-    else g.setTargetAtTime(target, this.ctx.currentTime, 0.05);
+    const now = this.ctx.currentTime;
+    const set = (param: AudioParam, target: number) => {
+      param.cancelScheduledValues(now);
+      if (immediate) param.setValueAtTime(target, now);
+      else param.setTargetAtTime(target, now, 0.05);
+    };
+    set(this.master.gain, this.muted ? 0 : 1);
+    if (this.musicLevel) set(this.musicLevel.gain, this.levels.music);
+    if (this.fxLevel) set(this.fxLevel.gain, this.levels.sfx);
   }
 
   /** Intro vocale puis musique en boucle (une intro par session). */
@@ -428,7 +439,7 @@ class AudioEngine {
 
   /** Petits sons d'interface (brassage, stabilisation, tour…). */
   cue(name: Cue): void {
-    if (this.muted) return;
+    if (this.muted || this.levels.sfx === 0) return;
     const ctx = this.ensure();
     if (!ctx || !this.sfx) return;
     const spec = CUES[name];

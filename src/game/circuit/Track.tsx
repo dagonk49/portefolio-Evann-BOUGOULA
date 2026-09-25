@@ -30,10 +30,11 @@ function asphalt() {
     256,
     256,
     (ctx, w, h) => {
-      ctx.fillStyle = "#3d3f45";
+      // Asphalte sombre et fin grain : les vibreurs et les lignes ressortent nettement.
+      ctx.fillStyle = "#2c2e33";
       ctx.fillRect(0, 0, w, h);
       for (let i = 0; i < 2600; i++) {
-        const v = 50 + Math.floor(Math.random() * 30);
+        const v = 38 + Math.floor(Math.random() * 26);
         ctx.fillStyle = `rgb(${v},${v},${v + 4})`;
         ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
       }
@@ -100,7 +101,7 @@ function TrackSurface() {
   useEffect(() => () => geometry.dispose(), [geometry]);
   const tex = asphalt();
   tex.wrapT = THREE.RepeatWrapping;
-  const material = cachedMaterial("circuit:asphalt", () => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.86, metalness: 0.02 }));
+  const material = cachedMaterial("circuit:asphalt", () => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.78, metalness: 0.04 }));
   return (
     <>
       <mesh geometry={geometry} material={material} receiveShadow />
@@ -150,8 +151,9 @@ function Kerbs() {
       im.computeBoundingSphere();
     });
   }, [reds, whites]);
-  const redMat = cachedMaterial("kerb:red", () => new THREE.MeshStandardMaterial({ color: "#e0342f", emissive: "#ff2a1f", emissiveIntensity: 0.55, roughness: 0.6 }));
-  const whiteMat = cachedMaterial("kerb:white", () => new THREE.MeshStandardMaterial({ color: "#f4f1ea", emissive: "#fff6e0", emissiveIntensity: 0.35, roughness: 0.6 }));
+  // Vibreurs nets : couleurs franches, légère émission pour rester lisibles à l'heure dorée, sans halo.
+  const redMat = cachedMaterial("kerb:red", () => new THREE.MeshStandardMaterial({ color: "#d9302a", emissive: "#ff2a1f", emissiveIntensity: 0.28, roughness: 0.5 }));
+  const whiteMat = cachedMaterial("kerb:white", () => new THREE.MeshStandardMaterial({ color: "#f4f1ea", emissive: "#fff6e0", emissiveIntensity: 0.16, roughness: 0.5 }));
   return (
     <>
       <instancedMesh ref={red} args={[unitBox(), redMat, reds.length]} receiveShadow />

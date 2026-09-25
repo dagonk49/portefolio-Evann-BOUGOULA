@@ -24,13 +24,14 @@ test.describe("circuit extérieur", () => {
     await waitIdle(page, "circuit");
     const state = await page.evaluate(() => window.__lab!.state());
     expect(state.driving).toBeNull();
+    // Sans la commande `cars`, aucun stock-car (ni modèle, ni collider) : seul le kart des stands existe.
+    expect(state.vehicles).toEqual(["kart"]);
     // Son coupé par défaut, aucune lecture automatique.
     expect(state.audio).toMatchObject({ muted: true, phase: "idle", introPlayed: false });
     await expect(page.locator(".hud")).toHaveAttribute("data-world", "circuit");
     // Nouveau Canvas : le compteur de géométries repart du monde extérieur, pas du lab.
     const after = await page.evaluate(() => window.__lab!.stats()!.geometries);
     expect(after).not.toBe(before);
-    await page.locator(".hud-welcome").getByRole("button", { name: "En piste" }).click();
 
     // Kart des stands : E pour monter, accélérer, F pour descendre.
     await teleport(page, ...KART);
@@ -72,11 +73,16 @@ test.describe("circuit extérieur", () => {
     expect(state.audio.muted).toBe(false);
     // Intro lancée (ou bloquée par le navigateur, avec un bouton pour l'activer).
     expect(["intro", "music", "blocked"]).toContain(state.audio.phase);
-    const mute = page.locator(".hud-audio__mute");
-    await expect(mute).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByRole("slider", { name: "Volume" })).toBeVisible();
-    await mute.click();
-    await expect(mute).toHaveAttribute("aria-pressed", "false");
+    expect(state.vehicles.sort()).toEqual(["kart", "stockcar"]);
+    // Réglages du son dans la fenêtre Options (touche O) : bascule générale et volumes séparés.
+    await page.keyboard.press("o");
+    const options = page.getByRole("dialog", { name: "Options" });
+    await expect(options).toBeVisible();
+    const toggle = options.getByRole("switch");
+    await expect(toggle).toBeChecked();
+    await expect(options.getByRole("slider", { name: "Musique d'ambiance" })).toBeVisible();
+    await expect(options.getByRole("slider", { name: "Effets sonores et voix de l'intro" })).toBeVisible();
+    await toggle.uncheck();
     await page.waitForFunction(() => window.__lab!.state().audio.muted === true);
   });
 
@@ -84,7 +90,6 @@ test.describe("circuit extérieur", () => {
     await seedSettings(page, { world: "circuit" });
     await page.goto("/");
     await enterLab(page);
-    await page.locator(".hud-welcome").getByRole("button", { name: "En piste" }).click();
     await teleport(page, -28.2, 3.4);
     await waitActive(page, "anomaly:evann.hobbies.valorant");
     await page.keyboard.press("e");

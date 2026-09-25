@@ -17,6 +17,7 @@ import { currentInteractables, interactWith, toggleVehicle } from "../ui/actions
  */
 export function InteractionSystem({ world = "lab" }: { world?: WorldId }) {
   const last = useRef(0);
+  const seenClose = useRef(0);
 
   useFrame(({ clock }) => {
     const ui = useLabUi.getState();
@@ -40,10 +41,15 @@ export function InteractionSystem({ world = "lab" }: { world?: WorldId }) {
       onVehicle: world === "circuit" ? toggleVehicle : undefined,
     });
 
-    if (clock.elapsedTime - last.current < 0.1) return;
+    // Une fenêtre vient de se fermer : recalcul immédiat, sans hystérésis sur l'ancien point actif.
+    const justClosed = ui.closedAt !== seenClose.current;
+    if (!justClosed && clock.elapsedTime - last.current < 0.1) return;
+    seenClose.current = ui.closedAt;
     last.current = clock.elapsedTime;
     const { x, z } = player.position;
-    if (!ui.panel && !ui.stabilizing && !ui.travel) ui.setActive(pickActive(x, z, currentInteractables(), ui.active));
+    // Proximité calculée à la distance réelle joueur ↔ borne (pas d'événements d'entrée/sortie de collider,
+    // qui peuvent se perdre quand la physique est en pause) : l'état ne peut pas rester figé.
+    if (!ui.panel && !ui.stabilizing && !ui.travel) ui.setActive(pickActive(x, z, currentInteractables(), justClosed ? null : ui.active));
     ui.setZone(zoneNameAt(x, z, world));
 
     const app = useApp.getState();

@@ -109,6 +109,13 @@ export interface GameKeyHandlers {
   onVehicle?: () => void;
   /** Remettre le véhicule d'aplomb (R). */
   onReset?: () => void;
+  /** Ouvrir les options (O). */
+  onOptions?: () => void;
+  /**
+   * Le visiteur reprend le jeu alors qu'un bouton du HUD a gardé le focus :
+   * on rend le focus à la surface de jeu, pour qu'Entrée et Espace servent au jeu.
+   */
+  onResume?: () => void;
 }
 
 /** Éléments sur lesquels Entrée/Espace ont déjà un sens (bouton, lien…). */
@@ -130,6 +137,7 @@ export function attachKeyboard(handlers: GameKeyHandlers): () => void {
     if (MOVEMENT_CODES.has(e.code)) {
       input.keys.add(e.code);
       if (e.code.startsWith("Arrow")) e.preventDefault();
+      if (isActivatable(active) && !(active as HTMLElement).closest("[role='dialog']")) handlers.onResume?.();
       return;
     }
     if (isActivatable(active) && (e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter")) return;
@@ -145,6 +153,9 @@ export function attachKeyboard(handlers: GameKeyHandlers): () => void {
         break;
       case "KeyR":
         if (!e.repeat) handlers.onReset?.();
+        break;
+      case "KeyO":
+        if (!e.repeat) handlers.onOptions?.();
         break;
       case "KeyE":
       case "Enter":

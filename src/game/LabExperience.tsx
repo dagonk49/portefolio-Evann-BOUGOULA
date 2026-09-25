@@ -9,7 +9,7 @@
  * pour l'autre monde. L'écran de transition affiche ces étapes réelles.
  */
 import { PerformanceMonitor } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -32,7 +32,15 @@ import { LAB_DOOR_ARRIVAL, SPAWN } from "./layout";
 import { resetVehicleState, vehicles } from "./circuit/vehicleState";
 import { CIRCUIT_ARRIVAL, STOCKCAR_GRID, trackPoint } from "./circuit/layout";
 import { LoadingTransition } from "./LoadingTransition";
+import { PostFX } from "./PostFX";
+import { trackInputModality } from "./ui/inputModality";
 import { skidMarks } from "./circuit/SkidMarks";
+
+/** Remet les compteurs du renderer à zéro au début de chaque image (mesures via __lab.stats). */
+function InfoReset() {
+  useFrame(({ gl }) => gl.info.reset(), -100);
+  return null;
+}
 
 function PhysicsReady({ onReady }: { onReady: () => void }) {
   useEffect(() => onReady(), [onReady]);
@@ -53,6 +61,8 @@ declare global {
         world: WorldId;
         travel: string | null;
         driving: string | null;
+        /** Véhicules présents dans la scène (le stock-car n'existe qu'en mode course). */
+        vehicles: string[];
         announcement: string;
         audio: { phase: string; muted: boolean; musicOn: boolean; introPlayed: boolean };
       };
@@ -174,10 +184,13 @@ export default function LabExperience() {
 
   // Signaux « Canvas créé » et « moteur physique prêt », mémorisés jusqu'au prochain changement de monde.
   const signals = useRef({ canvas: false, physics: false });
+  // Délai maximal d'attente d'un signal : une étape qui n'aboutit jamais ne verrouille pas l'interface.
+  const SIGNAL_TIMEOUT = 20_000;
   const waitFor = (kind: "canvas" | "physics") =>
     new Promise<void>((resolve) => {
-      if (signals.current[kind]) resolve();
-      else waiters.current[kind].push(resolve);
+      if (signals.current[kind]) return resolve();
+      waiters.current[kind].push(resolve);
+      window.setTimeout(resolve, SIGNAL_TIMEOUT);
     });
   const release = (kind: "canvas" | "physics") => {
     signals.current[kind] = true;
@@ -210,7 +223,22 @@ export default function LabExperience() {
   useEffect(() => {
     let disposed = false;
     const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, reducedRef.current ? Math.min(ms, 60) : ms));
+    let running = false;
     const run = async (to: WorldId) => {
+      if (running) return;
+      running = true;
+      try {
+        await sequence(to);
+      } finally {
+        running = false;
+        // Quoi qu'il arrive (erreur, étape interrompue), aucune transition ne reste active : jeu et interfaces se débloquent.
+        if (!disposed && (useLabUi.getState().travel?.from ?? null) !== null) {
+          useLabUi.setState({ travel: null, travelRequest: null, focus: null, active: null });
+        }
+        if (!disposed) useLabUi.setState({ travelRequest: null });
+      }
+    };
+    const sequence = async (to: WorldId) => {
       const app = useApp.getState();
       const from = app.world;
       if (from === to) {
@@ -285,6 +313,13 @@ export default function LabExperience() {
       onRecenter: () => cameraControl.recenter(),
       onVehicle: () => toggleVehicle(),
       onReset: () => resetVehicle(),
+      onOptions: () => useLabUi.getState().openPanel({ kind: "settings" }),
+      onResume: () => rootRef.current?.focus({ preventScroll: true }),
+    });
+    const stopModality = trackInputModality();
+    // Fermeture d'une fenêtre : entrées remises à zéro (aucune touche « collée ») et contrôleur aussitôt actif.
+    const unsubPanel = useLabUi.subscribe((s, prev) => {
+      if (prev.panel && !s.panel) resetInput();
     });
     window.__lab = {
       player: () => [player.position.x, player.position.y, player.position.z],
@@ -308,6 +343,7 @@ export default function LabExperience() {
           world: a.world,
           travel: s.travel ? (s.travel.done ? "done" : s.travel.steps.find((x) => x.status === "active")?.id ?? "running") : null,
           driving: s.driving,
+          vehicles: (Object.keys(vehicles) as (keyof typeof vehicles)[]).filter((k) => vehicles[k].present),
           announcement: s.announcement,
           audio: { phase: audio.phase, muted: a.audio.muted, musicOn: audio.musicOn, introPlayed: audio.introPlayed },
         };
@@ -322,6 +358,8 @@ export default function LabExperience() {
     };
     return () => {
       detach();
+      stopModality();
+      unsubPanel();
       cancelPendingActions();
       resetInput();
       audioEngine.stopAll();
@@ -371,9 +409,12 @@ export default function LabExperience() {
           dpr={high ? [1, 1.75] : 1}
           frameloop={hidden ? "never" : "always"}
           camera={{ fov: 32, near: 0.5, far: 180, position: [20, 18, 20] }}
-          gl={{ antialias: high, powerPreference: "high-performance", preserveDrawingBuffer: false }}
+          // Antialiasing : MSAA du post-traitement en qualité haute ; ACES Filmic sans post-traitement.
+          gl={{ antialias: false, powerPreference: "high-performance", preserveDrawingBuffer: false, toneMapping: THREE.ACESFilmicToneMapping }}
           onCreated={({ gl }) => {
             glRef.current = gl;
+            // Compteurs de rendu cumulés sur toute l'image (passes de post-traitement comprises), remis à zéro par InfoReset.
+            gl.info.autoReset = false;
             release("canvas");
             gl.domElement.addEventListener("webglcontextlost", (e) => {
               // Le démontage volontaire (changement de monde, de qualité, sortie) libère aussi le contexte :
@@ -403,6 +444,8 @@ export default function LabExperience() {
             </Physics>
           </Suspense>
           <CameraRig reducedMotion={reducedMotion} world={mounted} />
+          <InfoReset />
+          {high ? <PostFX reducedMotion={reducedMotion} /> : null}
           {high && autoQuality ? (
             <PerformanceMonitor
               flipflops={2}

@@ -8,7 +8,6 @@ import { Dialog } from "./Dialog";
 import { openContent, travelTo } from "./actions";
 import { anomaliesOf } from "../interaction";
 import { cameraControl } from "../camera/CameraRig";
-import { audioEngine } from "@/audio/AudioEngine";
 
 const STATE_LABEL = { spotted: "repérée", viewed: "consultée" } as const;
 
@@ -72,6 +71,7 @@ export function IndexPanel({ onClose }: { onClose: () => void }) {
 }
 
 export function HelpPanel({ onClose }: { onClose: () => void }) {
+  const nascar = useApp((s) => s.isNascarUnlocked);
   return (
     <Dialog title="Aide et commandes" kicker={<span className="lab-mono">EVANN // ROOT ACCESS</span>} onClose={onClose}>
       <p className="lab-lead">
@@ -87,6 +87,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
           ["E ou Entrée", "interagir, stabiliser une anomalie"],
           ["Échap", "fermer un panneau · pause"],
           ["I", "index des contenus"],
+          ["O", "options : son, commandes, graphismes"],
           ["H", "cette aide"],
           ["C", "recentrer la caméra"],
           ["Glisser · molette", "décaler la vue · zoomer"],
@@ -100,7 +101,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
       <h3 className="lab-h3">Circuit extérieur et véhicules</h3>
       <dl className="lab-keys">
         {[
-          ["E près d'un véhicule", "monter à bord (kart des stands, stock-car)"],
+          ["E près d'un véhicule", nascar ? "monter à bord (kart des stands, stock-car)" : "monter à bord du kart des stands"],
           ["Z / W ou ↑", "accélérer"],
           ["S ou ↓", "freiner, puis reculer"],
           ["Q / A, D ou ← →", "diriger"],
@@ -116,7 +117,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
       </dl>
       <p>
         Le sas du mur du fond (lab) et celui du paddock (circuit) relient les deux mondes. Le son reste coupé tant que tu ne l&apos;actives pas
-        (bouton en haut de l&apos;écran).
+        (engrenage « Options » en haut à droite, ou touche O).
       </p>
       <h3 className="lab-h3">Manette</h3>
       <p>
@@ -130,10 +131,6 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
 }
 
 export function PauseMenu({ onClose }: { onClose: () => void }) {
-  const settings = useApp((s) => s.settings);
-  const updateSettings = useApp((s) => s.updateSettings);
-  const audio = useApp((s) => s.audio);
-  const setAudio = useApp((s) => s.setAudio);
   const resetAll = useApp((s) => s.resetAll);
   const resetMission = useApp((s) => s.resetMission);
   const setMode = useApp((s) => s.setMode);
@@ -170,31 +167,10 @@ export function PauseMenu({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <h3 className="lab-h3">Réglages</h3>
-      <div className="lab-settings">
-        <fieldset>
-          <legend>Qualité graphique</legend>
-          <label>
-            <input type="radio" name="quality" checked={settings.quality === "high"} onChange={() => updateSettings({ quality: "high", autoQuality: false })} /> Haute (ombres, antialiasing)
-          </label>
-          <label>
-            <input type="radio" name="quality" checked={settings.quality === "low"} onChange={() => updateSettings({ quality: "low", autoQuality: false })} /> Réduite (plus fluide)
-          </label>
-        </fieldset>
-        <label className="lab-switch">
-          <input
-            type="checkbox"
-            checked={!audio.muted}
-            onChange={(e) => {
-              audioEngine.unlock();
-              setAudio({ muted: !e.target.checked });
-            }}
-          />
-          <span>Son : effets, moteur et musique du circuit (coupé par défaut)</span>
-        </label>
-        <label className="lab-switch">
-          <input type="checkbox" checked={settings.effects === false} onChange={(e) => updateSettings({ effects: e.target.checked ? false : null })} />
-          <span>Réduire les animations décoratives</span>
-        </label>
+      <div className="lab-menu lab-menu--inline">
+        <button type="button" className="lab-btn" onClick={() => openPanel({ kind: "settings" })}>
+          Options : son, commandes, graphismes <span className="lab-kbd">O</span>
+        </button>
       </div>
       <h3 className="lab-h3">Progression</h3>
       {confirm ? (

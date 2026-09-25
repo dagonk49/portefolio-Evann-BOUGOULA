@@ -29,8 +29,14 @@ export interface Settings {
   autoQuality: boolean;
   /** `null` : suit la préférence système de réduction des mouvements. */
   effects: boolean | null;
-  helpSeen: boolean;
+  /**
+   * Tutoriel d'accueil : à afficher, terminé (première interaction réussie)
+   * ou ignoré définitivement par le visiteur.
+   */
+  tutorial: TutorialState;
 }
+
+export type TutorialState = "pending" | "done" | "skipped";
 
 export interface Progress {
   anomalies: Partial<Record<AnomalyId, AnomalyState>>;
@@ -43,8 +49,10 @@ export interface Progress {
 export interface AudioSettings {
   /** Tout le son du lab et du circuit (coupé par défaut). */
   muted: boolean;
-  /** Volume général, de 0 à 1. */
-  volume: number;
+  /** Musique d'ambiance (BGM), de 0 à 1. */
+  music: number;
+  /** Effets sonores, moteur et voix de l'intro, de 0 à 1. */
+  sfx: number;
 }
 
 interface PersistedData {
@@ -60,7 +68,7 @@ interface PersistedData {
   bestLap: number | null;
 }
 
-const defaultSettings = (): Settings => ({ quality: "high", autoQuality: true, effects: null, helpSeen: false });
+const defaultSettings = (): Settings => ({ quality: "high", autoQuality: true, effects: null, tutorial: "pending" });
 const defaultProgress = (): Progress => ({
   anomalies: {},
   lab: initialLabState(),
@@ -103,9 +111,9 @@ interface AppStore extends PersistedData {
 }
 
 /** Vérifie une progression relue depuis le stockage (données potentiellement anciennes). */
-const defaultAudio = (): AudioSettings => ({ muted: true, volume: 0.7 });
+const defaultAudio = (): AudioSettings => ({ muted: true, music: 0.7, sfx: 0.8 });
 
-function sanitize(data: Partial<PersistedData> | null): PersistedData {
+export function sanitize(data: Partial<PersistedData> | null): PersistedData {
   const base: PersistedData = {
     modePreference: null,
     settings: defaultSettings(),
@@ -116,9 +124,15 @@ function sanitize(data: Partial<PersistedData> | null): PersistedData {
     bestLap: null,
   };
   if (!data || typeof data !== "object") return base;
-  const { sound: legacySound, ...storedSettings } = (data.settings ?? {}) as Partial<Settings> & { sound?: unknown };
+  const {
+    sound: legacySound,
+    helpSeen: legacyHelpSeen,
+    ...storedSettings
+  } = (data.settings ?? {}) as Partial<Settings> & { sound?: unknown; helpSeen?: unknown };
   const settings = { ...base.settings, ...storedSettings };
   if (settings.quality !== "high" && settings.quality !== "low") settings.quality = "high";
+  // Ancienne carte de bienvenue déjà vue (v1, v2.0) : le tutoriel est considéré comme terminé.
+  if (!["pending", "done", "skipped"].includes(storedSettings.tutorial as string)) settings.tutorial = legacyHelpSeen === true ? "done" : "pending";
   const p = data.progress;
   const progress = defaultProgress();
   if (p && typeof p === "object") {
@@ -147,10 +161,15 @@ function sanitize(data: Partial<PersistedData> | null): PersistedData {
   }
   const modePreference = data.modePreference === "lab" || data.modePreference === "sober" ? data.modePreference : null;
   const world: WorldId = data.world === "circuit" ? "circuit" : "lab";
+  const level = (v: unknown, fallback: number) => (typeof v === "number" && v >= 0 && v <= 1 ? v : fallback);
+  const stored = (data.audio ?? {}) as Partial<AudioSettings> & { volume?: unknown };
+  // Ancien volume unique (v2.0) : repris pour la musique et les effets.
+  const legacyVolume = level(stored.volume, NaN);
   const audio: AudioSettings = {
     // Ancien réglage v1 « effets sonores » : repris comme état initial du son.
-    muted: typeof data.audio?.muted === "boolean" ? data.audio.muted : legacySound !== true,
-    volume: typeof data.audio?.volume === "number" && data.audio.volume >= 0 && data.audio.volume <= 1 ? data.audio.volume : 0.7,
+    muted: typeof stored.muted === "boolean" ? stored.muted : legacySound !== true,
+    music: level(stored.music, Number.isNaN(legacyVolume) ? 0.7 : legacyVolume),
+    sfx: level(stored.sfx, Number.isNaN(legacyVolume) ? 0.8 : legacyVolume),
   };
   const bestLap = typeof data.bestLap === "number" && Number.isFinite(data.bestLap) && data.bestLap > 0 ? data.bestLap : null;
   return { modePreference, settings, progress, world, isNascarUnlocked: data.isNascarUnlocked === true, audio, bestLap };

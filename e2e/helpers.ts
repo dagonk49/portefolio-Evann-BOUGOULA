@@ -7,7 +7,7 @@ export async function seedSettings(page: Page, extra: Record<string, unknown> = 
   const value = JSON.stringify({
     v: 1,
     savedAt: "",
-    data: { modePreference: null, settings: { quality: "low", autoQuality: false, effects: false, helpSeen: true }, ...extra },
+    data: { modePreference: null, settings: { quality: "low", autoQuality: false, effects: false, tutorial: "done" }, ...extra },
   });
   await page.addInitScript(
     ([key, v]) => {

@@ -127,7 +127,8 @@ Principes :
 | Interaction | Dalles au sol (shader GLSL losange + cercles), balise « E · Entrée — Interagir », fenêtre HTML accessible, travelling caméra |
 | Anomalies | Noyau, cage filaire, fragments de code et particules (shader) ; états *repérée*, *consultée*, et *révélée par la mission* |
 | Mission | Brassage (panneau HTML ou clic sur les ports 3D), câbles 3D, voyants de port, VLAN d'accès, IPv4, diagnostic, terminal `ipconfig`/`ping`, console switch en lecture seule |
-| Qualité | Haute (ombres, antialiasing, DPR ≤ 1,75) ou réduite (DPR 1, sans ombres) ; baisse automatique une fois si l'animation n'est pas fluide (désactivable) |
+| Qualité | Élevée (ombres douces PCF, post-traitement : MSAA, bloom ciblé sur les néons, ACES Filmic ; DPR ≤ 1,75) ou basse (DPR 1, sans ombres ni post-traitement) ; baisse automatique une fois si l'animation n'est pas fluide (désactivable). Réglage dans **Options** |
+| Rendu | Environnement lumineux procédural (drei `Environment` + `Lightformer`, calculé une fois, sans fichier) pour les reflets de l'aluminium, des jantes et des rails ; asphalte sombre et vibreurs nets sur le circuit |
 | Pause | Onglet masqué : rendu et physique suspendus. Menu Échap : physique en pause |
 
 ### Mission « Remettre le poste du lab en ligne »
@@ -173,12 +174,28 @@ le visiteur le demande. Dans le lab, la dalle « Écran NetForge » devant le se
 ### Son
 
 `src/audio/AudioEngine.ts` : un seul contexte Web Audio (bus maître, voix, musique, moteur, interface, compresseur).
-Le son est **coupé par défaut** ; le bouton « Son » et le volume sont toujours visibles en haut de l'écran 3D (et dans le menu Pause).
+Le son est **coupé par défaut**. Réglages dans la fenêtre **Options** (engrenage en haut à droite, à côté de la bascule de mode,
+ou touche `O`) : bascule générale, volume de la musique d'ambiance, volume des effets sonores et de la voix de l'intro (deux bus
+séparés dans le moteur).
 La commande secrète du terminal active le son : c'est une demande explicite du visiteur. En arrivant sur le circuit en stock-car,
 l'intro (`public/audio/intro-racer.m4a`, repli Opus `.ogg`) est lue une fois par session puis fondue vers une boucle
 « synthwave chill » **générée en code** (la mineur, Am–F–C–G, 96 BPM, `src/audio/synthwave.ts`). Si le navigateur bloque la lecture,
-un bouton « ▶ Activer le son » apparaît. Boutons « Musique », « Passer l'intro » / « Rejouer l'intro ». Moteur synthétisé selon la
-vitesse et l'accélérateur. Tout s'arrête en quittant le circuit.
+un bouton « ▶ Activer le son » apparaît dans le HUD. Dans les options, sur le circuit : lancer / arrêter la musique, passer,
+lancer ou rejouer l'intro. Moteur synthétisé selon la vitesse et l'accélérateur. Tout s'arrête en quittant le circuit.
+
+### Options, tutoriel, mode course (v2.1)
+
+- **Options** (`src/game/ui/SettingsModal.tsx`) : son, rappel visuel de toutes les touches (à pied, conduite, interface),
+  qualité graphique, baisse automatique, réduction des animations.
+- **Tutoriel** (`src/game/ui/TutorialBanner.tsx`) : au premier passage dans le lab, un bandeau discret en bas à droite
+  (en haut sur mobile) : « Première visite dans le Lab ? Déplace-toi avec ZQSD et approche-toi d'une borne lumineuse pour
+  interagir (E). » — « Compris » le masque pour la session, « Ignorer le tutoriel » définitivement ; la première interaction
+  réussie le termine. Aucun blocage des contrôles.
+- **Stock-car** : sans la commande `cars`, il n'existe pas dans la scène (ni modèle, ni collider, ni allusion) ; on explore le
+  circuit à pied, avec le kart des stands en option. Après `cars`, on arrive au volant et l'intro sonore démarre.
+- **Interfaces** : la fermeture d'une fenêtre purge l'état lié (point actif, cadrage, sélection), remet les entrées à zéro et
+  rend le focus au jeu si la fenêtre a été ouverte à la souris ; la proximité est recalculée aussitôt à la distance réelle
+  joueur ↔ borne. Garde-fous : une stabilisation ou un changement de monde interrompu ne peut plus verrouiller le jeu.
 
 ## Terminal du mode sobre
 
@@ -195,8 +212,10 @@ Insensible à la casse, historique ↑/↓, Tab complète une commande sans pié
 - Mode sobre sémantique (titres, listes, `time`, landmarks), lien d'évitement, focus visible, contrastes vérifiés (axe, WCAG 2 AA).
 - Fenêtres du lab : `role="dialog"`, focus piégé, Échap, retour du focus ; onglets au clavier ; états des ports en texte + symbole.
 - `prefers-reduced-motion` : animations décoratives coupées (voyants, particules, flux, rotation des anomalies), travelling instantané.
-- Le son est coupé par défaut ; couper / rétablir et le volume restent visibles en haut de l'écran 3D. Aucune lecture automatique
+- Le son est coupé par défaut et se règle dans Options (engrenage toujours visible, touche `O`). Aucune lecture automatique
   sans action du visiteur.
+- Retour du focus : au déclencheur pour une fenêtre ouverte au clavier, à la surface de jeu pour une fenêtre ouverte à la
+  souris ; reprendre le déplacement rend aussi le focus au jeu (Entrée et Espace ne réactivent jamais un bouton oublié).
 - Véhicules et changement de monde : commandes clavier, manette et tactile ; passage de sas aussi possible depuis le menu Pause et l'index.
 - Le Canvas est masqué aux lecteurs d'écran ; tout son contenu est accessible par l'index et le mode sobre.
 

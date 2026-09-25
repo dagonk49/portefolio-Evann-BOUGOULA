@@ -13,6 +13,7 @@ export type Panel =
   | { kind: "pc"; tab?: "nic" | "switch" | "diag" }
   | { kind: "index" }
   | { kind: "help" }
+  | { kind: "settings" }
   | { kind: "pause" };
 
 export interface CameraFocus {
@@ -58,6 +59,11 @@ interface LabUiStore {
   driving: VehicleKind | null;
   /** Où reprendre à pied en descendant du véhicule. */
   exitAt: [number, number, number] | null;
+  /**
+   * Horodatage de la dernière fermeture de fenêtre : le système d'interaction
+   * recalcule aussitôt le point actif au lieu de garder celui d'avant.
+   */
+  closedAt: number;
   requestTravel: (to: WorldId) => void;
   setTravel: (travel: Travel | null) => void;
   setDriving: (kind: VehicleKind | null, exitAt?: [number, number, number] | null) => void;
@@ -85,11 +91,14 @@ export const useLabUi = create<LabUiStore>()((set) => ({
   travel: null,
   driving: null,
   exitAt: null,
+  closedAt: 0,
   requestTravel: (to) => set((s) => (s.travel || s.travelRequest ? s : { travelRequest: to, panel: null })),
   setTravel: (travel) => set({ travel }),
   setDriving: (driving, exitAt = null) => set({ driving, exitAt }),
   openPanel: (panel, focus = null) => set({ panel, focus }),
-  closePanel: () => set({ panel: null, focus: null, selectedPort: null, patchMessage: null }),
+  // Fermeture : tout l'état lié à la fenêtre est purgé (point actif compris), rien ne reste « collé ».
+  closePanel: () =>
+    set({ panel: null, focus: null, selectedPort: null, patchMessage: null, active: null, closedAt: performance.now() }),
   setActive: (active) => set((s) => (s.active === active ? s : { active })),
   setStabilizing: (stabilizing) => set({ stabilizing }),
   selectPort: (selectedPort) => set({ selectedPort }),

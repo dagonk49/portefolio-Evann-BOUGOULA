@@ -132,3 +132,16 @@ menu Pause → « Réinitialiser toute la progression », ou bouton de réinitia
 
 `src/sim/scenario.ts` décrit la topologie (ports, câbles fixes, VLAN, adresses) et `src/sim/mission.ts` les étapes et indices.
 Toute modification doit rester cohérente avec `src/sim/network.test.ts` : lancez `npm test` et adaptez les cas.
+
+## Options, tutoriel, rendu (v2.1)
+
+- **Options** : `src/game/ui/SettingsModal.tsx`. La liste `CONTROLS` décrit le rappel des touches ; ajoutez-y toute nouvelle
+  commande clavier (gérée dans `src/game/input.ts`).
+- **Volumes** : `useApp().audio` (`muted`, `music`, `sfx`), appliqués par `audioEngine.configure` sur deux bus séparés.
+- **Tutoriel** : textes dans `src/game/ui/TutorialBanner.tsx` ; état persisté `settings.tutorial` (`pending`, `done`, `skipped`).
+  Pour le revoir : Pause → « Réinitialiser toute la progression ».
+- **Bloom** : `src/game/PostFX.tsx` (seuil `BLOOM_THRESHOLD`, intensité des néons `GLOW_BOOST`). Un matériau devient « néon »
+  avec `glow()` ou `registerGlow()` (`src/game/materials.ts`) ; les shaders des dalles et des câbles lisent `GLOW_UNIFORM`.
+  Ne passez pas d'écran ou de grande surface en néon : ils brilleraient en entier.
+- **Reflets** : environnement procédural dans `src/game/scene/Environment.tsx` (lab) et `src/game/circuit/CircuitEnvironment.tsx`
+  (circuit) ; finitions métalliques par défaut de `alu` / `aluDark` dans `FINISH` (`src/game/materials.ts`).

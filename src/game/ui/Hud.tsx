@@ -10,7 +10,9 @@ import { BayPanel, PcPanel } from "./MissionPanels";
 import { HelpPanel, IndexPanel, PauseMenu } from "./MetaPanels";
 import { exitVehicle, openContent, resetVehicle } from "./actions";
 import { hasCoarsePointer } from "@/lib/device";
-import { AudioControls } from "./AudioControls";
+import { SettingsModal } from "./SettingsModal";
+import { TutorialBanner } from "./TutorialBanner";
+import { useAudioController } from "@/audio/useAudioController";
 import { anomaliesOf } from "../interaction";
 import { drive, lapClock, VEHICLE_LABEL } from "../circuit/vehicleState";
 import { formatLap } from "../circuit/layout";
@@ -74,38 +76,6 @@ function MissionTracker() {
   );
 }
 
-function WelcomeCard() {
-  const helpSeen = useApp((s) => s.settings.helpSeen);
-  const updateSettings = useApp((s) => s.updateSettings);
-  const openPanel = useLabUi((s) => s.openPanel);
-  if (helpSeen) return null;
-  return (
-    <aside className="hud-welcome" aria-labelledby="hud-welcome-title">
-      <h2 id="hud-welcome-title">Bienvenue dans mon lab</h2>
-      <p>
-        <span className="lab-kbd">ZQSD</span> / <span className="lab-kbd">WASD</span> ou flèches pour marcher, <span className="lab-kbd">Maj</span> pour courir,{" "}
-        <span className="lab-kbd">Espace</span> pour sauter, <span className="lab-kbd">E</span> pour interagir.
-      </p>
-      <p>Approche-toi des dalles lumineuses et des anomalies de code. Tout le parcours est aussi dans l&apos;index.</p>
-      <div className="hud-welcome__actions">
-        <button type="button" className="lab-btn lab-btn--primary" onClick={() => updateSettings({ helpSeen: true })}>
-          C&apos;est parti
-        </button>
-        <button
-          type="button"
-          className="lab-btn"
-          onClick={() => {
-            updateSettings({ helpSeen: true });
-            openPanel({ kind: "index" });
-          }}
-        >
-          Voir l&apos;index
-        </button>
-      </div>
-    </aside>
-  );
-}
-
 /** Notification brève quand la liaison est rétablie. */
 function OnlineToast() {
   const passed = useApp((s) => s.progress.mission.diagnosticPassed);
@@ -125,6 +95,17 @@ function OnlineToast() {
     <p className="hud-toast" role="status">
       Liaison rétablie : les flux circulent. Une anomalie vient d&apos;apparaître au-dessus du switch, dans la baie.
     </p>
+  );
+}
+
+/** Lecture refusée par le navigateur : seul rappel sonore laissé dans le HUD, le temps de l'autoriser. */
+function AudioBlockedPrompt() {
+  const audio = useAudioController();
+  if (audio.phase !== "blocked") return null;
+  return (
+    <button type="button" className="hud-btn hud-btn--accent hud-audio-blocked" onClick={audio.resumeBlocked}>
+      <span aria-hidden="true">▶</span> Activer le son
+    </button>
   );
 }
 
@@ -198,42 +179,6 @@ function DriveHud() {
   );
 }
 
-function CircuitWelcome() {
-  const nascar = useApp((s) => s.isNascarUnlocked);
-  const driving = useLabUi((s) => s.driving);
-  const [open, setOpen] = useState(true);
-  const [coarse] = useState(() => hasCoarsePointer());
-  if (!open) return null;
-  return (
-    <aside className="hud-welcome hud-welcome--circuit" aria-labelledby="hud-circuit-title">
-      <h2 id="hud-circuit-title">{nascar ? "Racer mode : stock-car n°49 en piste" : "Bienvenue sur le circuit"}</h2>
-      {coarse ? (
-        <p>
-          {driving
-            ? "Joystick vers le haut pour accélérer, vers le bas pour freiner, sur les côtés pour diriger. Maintiens « Drift » pour drifter, « Descendre » pour sortir."
-            : "Explore l'infield au joystick : quatre spots cachent chacun une anomalie. Approche-toi du kart des stands puis « Interagir » pour monter."}
-        </p>
-      ) : driving ? (
-        <p>
-          <span className="lab-kbd">Z</span>/<span className="lab-kbd">W</span> ou <span className="lab-kbd">↑</span> accélérer,{" "}
-          <span className="lab-kbd">S</span> ou <span className="lab-kbd">↓</span> freiner puis reculer, <span className="lab-kbd">Q</span>/
-          <span className="lab-kbd">D</span> diriger, <span className="lab-kbd">Espace</span> drifter, <span className="lab-kbd">F</span> descendre.
-        </p>
-      ) : (
-        <p>
-          Explore l&apos;infield à pied : quatre spots cachent chacun une anomalie. Le kart des stands se prend avec <span className="lab-kbd">E</span>.
-        </p>
-      )}
-      <p>Le sas du paddock ramène au lab. Tout reste lisible dans l&apos;index et le mode sobre.</p>
-      <div className="hud-welcome__actions">
-        <button type="button" className="lab-btn lab-btn--primary" onClick={() => setOpen(false)}>
-          En piste
-        </button>
-      </div>
-    </aside>
-  );
-}
-
 export function Hud({ world = "lab" }: { world?: WorldId }) {
   const zone = useLabUi((s) => s.zone);
   const panel = useLabUi((s) => s.panel);
@@ -262,7 +207,6 @@ export function Hud({ world = "lab" }: { world?: WorldId }) {
             )}
           </p>
         </div>
-        <AudioControls circuit={circuit} />
         <nav className="hud-tools" aria-label={circuit ? "Outils du circuit" : "Outils du lab"}>
           <button type="button" className="hud-btn" onClick={() => openPanel({ kind: "index" })}>
             Index <span className="lab-kbd">I</span>
@@ -270,11 +214,15 @@ export function Hud({ world = "lab" }: { world?: WorldId }) {
           <button type="button" className="hud-btn" onClick={() => openContent({ type: "contact" })}>
             Contact
           </button>
-          <button type="button" className="hud-btn" onClick={() => openPanel({ kind: "help" })}>
-            Aide <span className="lab-kbd">H</span>
-          </button>
           <button type="button" className="hud-btn" onClick={() => openPanel({ kind: "pause" })}>
             Menu <span className="lab-kbd">Échap</span>
+          </button>
+          {/* Engrenage discret, collé à la bascule de mode : son, commandes, graphismes. */}
+          <button type="button" className="hud-btn hud-btn--gear" onClick={() => openPanel({ kind: "settings" })} aria-label="Options">
+            <span className="hud-gear" aria-hidden="true">
+              ⚙
+            </span>
+            <span className="hud-gear__label">Options</span> <span className="lab-kbd">O</span>
           </button>
         </nav>
       </header>
@@ -284,7 +232,8 @@ export function Hud({ world = "lab" }: { world?: WorldId }) {
           {circuit ? "loisirs découverts" : "anomalies stabilisées"} {viewed}/{list.length}
         </p>
       </div>
-      {circuit ? <CircuitWelcome /> : <WelcomeCard />}
+      <AudioBlockedPrompt />
+      <TutorialBanner key={world} world={world} />
       {circuit ? null : <OnlineToast />}
     </div>
   );
@@ -306,6 +255,8 @@ export function Panels() {
       return <IndexPanel onClose={close} />;
     case "help":
       return <HelpPanel onClose={close} />;
+    case "settings":
+      return <SettingsModal onClose={close} />;
     case "pause":
       return <PauseMenu onClose={close} />;
   }

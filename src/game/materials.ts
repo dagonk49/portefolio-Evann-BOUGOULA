@@ -33,21 +33,55 @@ const materials = new Map<string, THREE.Material>();
 const geometries = new Map<string, THREE.BufferGeometry>();
 const textures = new Set<THREE.Texture>();
 
+/**
+ * Finitions par défaut de certaines teintes : l'aluminium des baies et des
+ * rails est métallique et peu rugueux, pour accrocher les reflets de
+ * l'environnement lumineux (voir scene/Environment.tsx).
+ */
+const FINISH: Partial<Record<PaletteKey, { roughness: number; metalness: number }>> = {
+  alu: { roughness: 0.34, metalness: 0.62 },
+  aluDark: { roughness: 0.42, metalness: 0.55 },
+};
+
 /** Matériau standard mat (low-poly, légèrement rugueux). */
 export function mat(color: PaletteKey | string, options: { roughness?: number; metalness?: number; flat?: boolean } = {}): THREE.MeshStandardMaterial {
+  const finish = FINISH[color as PaletteKey];
   const hex = color in PALETTE ? PALETTE[color as PaletteKey] : color;
-  const key = `std:${hex}:${options.roughness ?? 0.82}:${options.metalness ?? 0.05}:${options.flat ?? true}`;
+  const roughness = options.roughness ?? finish?.roughness ?? 0.82;
+  const metalness = options.metalness ?? finish?.metalness ?? 0.05;
+  const key = `std:${hex}:${roughness}:${metalness}:${options.flat ?? true}`;
   let m = materials.get(key) as THREE.MeshStandardMaterial | undefined;
   if (!m) {
-    m = new THREE.MeshStandardMaterial({
-      color: hex,
-      roughness: options.roughness ?? 0.82,
-      metalness: options.metalness ?? 0.05,
-      flatShading: options.flat ?? true,
-    });
+    m = new THREE.MeshStandardMaterial({ color: hex, roughness, metalness, flatShading: options.flat ?? true });
     materials.set(key, m);
   }
   return m;
+}
+
+/* ------------------------------------------------------------------ */
+/* Néons (LED, dalles, flux) : seuls éléments à dépasser le seuil de bloom */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Intensité des néons. En qualité haute, le post-traitement ne fait briller
+ * (bloom) que les pixels au-delà de 1 : on pousse donc la couleur des néons
+ * au-dessus de ce seuil, et rien d'autre. En qualité réduite (sans bloom),
+ * elle reste à 1 et le rendu est identique à celui d'origine.
+ */
+export const GLOW_UNIFORM = { value: 1 };
+const glowMaterials = new Set<THREE.MeshBasicMaterial>();
+
+/** Enregistre un matériau lumineux dont la couleur suit l'intensité des néons. */
+export function registerGlow<T extends THREE.MeshBasicMaterial>(m: T): T {
+  if (!m.userData.baseColor) m.userData.baseColor = m.color.clone();
+  m.color.copy(m.userData.baseColor as THREE.Color).multiplyScalar(GLOW_UNIFORM.value);
+  glowMaterials.add(m);
+  return m;
+}
+
+export function setGlowBoost(k: number): void {
+  GLOW_UNIFORM.value = k;
+  for (const m of glowMaterials) m.color.copy(m.userData.baseColor as THREE.Color).multiplyScalar(k);
 }
 
 /** Matériau lumineux (LED, écrans, traits) : non affecté par l'éclairage. */
@@ -56,7 +90,7 @@ export function glow(color: PaletteKey | string, opacity = 1): THREE.MeshBasicMa
   const key = `glow:${hex}:${opacity}`;
   let m = materials.get(key) as THREE.MeshBasicMaterial | undefined;
   if (!m) {
-    m = new THREE.MeshBasicMaterial({ color: hex, toneMapped: false, transparent: opacity < 1, opacity });
+    m = registerGlow(new THREE.MeshBasicMaterial({ color: hex, toneMapped: false, transparent: opacity < 1, opacity }));
     materials.set(key, m);
   }
   return m;
@@ -89,6 +123,7 @@ export function trackTexture<T extends THREE.Texture>(t: T): T {
 }
 
 export function disposeSharedResources(): void {
+  glowMaterials.clear();
   for (const m of materials.values()) m.dispose();
   for (const g of geometries.values()) g.dispose();
   for (const t of textures) t.dispose();
