@@ -11,7 +11,7 @@ la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicu
 | Types | `npm run typecheck` (TypeScript 5.9, `strict`, `noUncheckedIndexedAccess`) | OK, 0 erreur |
 | Tests unitaires | `npm test` (Vitest) | **76 tests / 9 fichiers OK** |
 | Build | `npm run build` (Next.js 16, export statique) | OK, page `/` pré-rendue en HTML |
-| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | v2.1 : `interfaces.spec.ts` (4 tests) et `circuit.spec.ts` OK ; suite complète en cours au moment du commit |
+| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **30 tests OK** (dont 4 nouveaux en v2.1 : `interfaces.spec.ts`) |
 | Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre ; v2.1 : HUD du lab avec tutoriel, fenêtre Options | 0 violation « serious » ou « critical » (mode sobre) ; 0 violation (HUD, Options) |
 | CSP | Console du navigateur (lab, transition, circuit, audio), en-têtes de `deploy/` | Aucune violation ; `frame-src https://netforge.dagz.fr` ajouté pour l'aperçu à la demande |
 | Audio | État du moteur lu via `window.__lab.state()` | Son coupé par défaut ; intro lancée en mode course (ou bouton si bloquée) ; fichier absent (404 simulé) → musique générée directement |
