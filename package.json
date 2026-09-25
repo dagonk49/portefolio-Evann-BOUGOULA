@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "check": "npm run typecheck && npm run test && npm run build",
-    "cv": "node scripts/build-cv.mjs"
+    "cv": "node scripts/build-cv.mjs",
+    "og": "node scripts/build-og.mjs"
   },
   "engines": {
     "node": ">=20.9"

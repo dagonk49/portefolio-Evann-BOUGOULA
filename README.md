@@ -27,6 +27,7 @@ npm run dev       # développement : http://localhost:3000
 npm run build     # export statique dans out/
 npm start         # sert out/ sur http://localhost:3000 (serveur Node minimal, sans dépendance ; /api/contact en envoi simulé)
 npm run cv        # après un build : régénère public/CV_Evann_Bougoula.pdf à partir de la page /cv
+npm run og        # régénère public/og-image.png (image des aperçus de lien, 1200 × 630)
 ```
 
 Vérifications :
@@ -51,8 +52,12 @@ d'envoi lit `server/.env`.
 ```bash
 cp server/.env.example server/.env   # renseigner CONTACT_FROM et le SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS…)
 docker compose up -d --build         # construit les deux images puis lance les conteneurs
-# → http://<ip-de-la-vm>:8080
+# → http://<ip-de-la-vm>:8080 (en production : https://evann-bougoula.dagz.fr)
 ```
+
+Variables de build du site (facultatives, lues par `next build`) : `SITE_URL` (adresse publique, par défaut
+`https://evann-bougoula.dagz.fr`) et `GOOGLE_SITE_VERIFICATION` (code de la balise Search Console). Exemple :
+`GOOGLE_SITE_VERIFICATION=abc123 docker compose up -d --build`.
 
 Service de contact (`server/`) :
 
@@ -88,7 +93,8 @@ Mise à jour du contenu : modifiez `src/data/`, puis `docker compose up -d --bui
 
 ```
 src/
-├─ app/                  Next.js (App Router) : accueil, /mentions-legales, /confidentialite, /cv (source du PDF)
+├─ app/                  Next.js (App Router) : accueil, /mentions-legales, /confidentialite, /cv (source du PDF),
+│                        robots.ts et sitemap.ts (générés en fichiers statiques)
 ├─ data/                 Modèle de données central et typé (source unique des deux modes et du terminal)
 │  ├─ types.ts           Types, identifiants stables, références entre contenus, provenance interne
 │  ├─ profile.ts         Identité, statut, mobilité, contacts (email, LinkedIn, GitHub), fichier de CV
@@ -120,7 +126,7 @@ src/
 │  └─ ui/                HUD (son, tableau de bord), fenêtres accessibles, mission, index, pause, tactile
 └─ styles/               Jetons de design, mode sobre, consentement, terminal, 3D, impression, CV
 server/                  Service d'envoi du formulaire : validation partagée, handler HTTP, Nodemailer, Dockerfile
-scripts/                 serve.mjs (aperçu + /api/contact simulé), build-cv.mjs (CV PDF)
+scripts/                 serve.mjs (aperçu + /api/contact simulé), build-cv.mjs (CV PDF), build-og.mjs (image d'aperçu)
 ```
 
 Correspondance avec les noms du brief v2 : `usePortfolioStore.ts` → `src/state/app.ts` (`useApp` : `world`,
@@ -277,6 +283,20 @@ les données (voir le guide d'édition) ; un test vérifie qu'aucun résultat n'
 - **Pages légales** : `/mentions-legales` (éditeur, directeur de la publication, hébergement auto-géré sur dagz.fr, propriété
   intellectuelle, marques citées) et `/confidentialite` (finalité exclusive, base légale, conservation 3 ans au plus, aucun
   tiers, stockage local détaillé, droits RGPD et CNIL, CGU).
+
+### Référencement
+
+- `src/lib/site.ts` : adresse publique (`SITE_URL`), métadonnées de page (`pageMetadata` : titre, description, **canonique**,
+  **Open Graph** avec `og:url` et `og:image`, carte Twitter `summary_large_image`) et **JSON-LD** de l'accueil
+  (`WebSite`, `ProfilePage`, `Person` : nom, poste, employeur, formation, certifications, LinkedIn et GitHub en `sameAs`).
+- `src/app/robots.ts` → `/robots.txt` (tout est explorable sauf `/api/`, ligne `Sitemap:`) ; `src/app/sitemap.ts` →
+  `/sitemap.xml` (accueil et pages légales ; la page `/cv`, source du PDF, est en `noindex` et hors sitemap).
+- `public/og-image.png` : image d'aperçu 1200 × 630 générée par `npm run og` (polices embarquées, aucune ressource externe).
+- Search Console : la balise `google-site-verification` n'est ajoutée que si `GOOGLE_SITE_VERIFICATION` est fourni au build
+  (aucun faux code). La validation par enregistrement DNS TXT sur `dagz.fr` ne demande aucune modification du site.
+- Cloudflare : si l'option « robots.txt géré » est active, Cloudflare ajoute son bloc de commentaires **devant** le
+  `robots.txt` du site (il ne le remplace que si le site n'en a pas). Après un déploiement, purger le cache de
+  `/robots.txt` et `/sitemap.xml`.
 
 ## Terminal du mode sobre
 

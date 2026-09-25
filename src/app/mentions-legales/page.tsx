@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { CONTACT_EMAIL, profile } from "@/data";
 import { LegalPage, LegalSection } from "@/components/legal/LegalPage";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/mentions-legales",
   title: `Mentions légales — ${profile.fullName}`,
-  description: "Éditeur, directeur de la publication, hébergement et propriété intellectuelle du portfolio d'Evann Bougoula.",
-  robots: { index: true, follow: true },
-};
+  description:
+    "Éditeur, directeur de la publication, hébergement et propriété intellectuelle du portfolio d'Evann Bougoula.",
+});
 
 const TOC = [
   { id: "editeur", label: "Éditeur du site" },
@@ -54,8 +56,9 @@ export default function MentionsLegales() {
 
       <LegalSection id="hebergement" title="Hébergement">
         <p>
-          Le site est auto-hébergé par son éditeur, {profile.fullName}, sur une infrastructure conteneurisée (Docker) rattachée à
-          son domaine personnel <strong>dagz.fr</strong>. Il s&apos;agit d&apos;un site statique servi par nginx ; le formulaire de
+          Le site, publié à l&apos;adresse <strong>evann-bougoula.dagz.fr</strong>, est auto-hébergé par son éditeur,{" "}
+          {profile.fullName}, sur une infrastructure conteneurisée (Docker) rattachée à son domaine personnel{" "}
+          <strong>dagz.fr</strong>. Il s&apos;agit d&apos;un site statique servi par nginx ; le formulaire de
           contact est traité par un service d&apos;envoi distinct, sur la même infrastructure.
         </p>
         <p>

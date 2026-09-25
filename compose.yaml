@@ -9,7 +9,13 @@
 # service « contact » (Nodemailer), joignable uniquement sur le réseau interne.
 services:
   portfolio:
-    build: .
+    build:
+      context: .
+      args:
+        # Adresse publique (canonique, Open Graph, robots.txt, sitemap.xml).
+        SITE_URL: ${SITE_URL:-https://evann-bougoula.dagz.fr}
+        # Code de la balise Google Search Console (méthode « balise HTML »), facultatif.
+        GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
     image: evann-portfolio:latest
     container_name: evann-portfolio
     restart: unless-stopped

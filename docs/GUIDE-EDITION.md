@@ -46,6 +46,15 @@ Ajouter vos preuves :
 Schémas : `src/components/sober/Schemas.tsx` (nœuds, groupes, liens, en coordonnées SVG). Gardez des libellés génériques pour ce
 qui n'est pas publiable (équipements, numéros de VLAN, adressage d'un client ou de l'EFS).
 
+## Référencement (canonique, Open Graph, sitemap, Search Console)
+
+- Adresse du site : `SITE_URL` dans `src/lib/site.ts` (ou variable de build `SITE_URL`). Tout en découle : balises
+  canoniques, `og:url`, `robots.txt`, `sitemap.xml`, JSON-LD.
+- Nouvelle page publique : ajoutez-la à `PUBLIC_PAGES` (sitemap) et exportez `metadata = pageMetadata({ path, title, description })`.
+- Image d'aperçu : modifiez le gabarit de `scripts/build-og.mjs`, puis `npm run og` (Chromium requis ; `CHROMIUM_PATH` si besoin).
+- Search Console, méthode « Balise HTML » : reconstruisez avec `GOOGLE_SITE_VERIFICATION=<code>` (par exemple
+  `GOOGLE_SITE_VERIFICATION=<code> docker compose up -d --build`). Méthode DNS : rien à changer dans le site.
+
 ## Contact, consentement et pages légales
 
 - **Formulaire** : `src/components/sober/ContactForm.tsx`. Les règles de validation (longueurs, format d'email) sont dans

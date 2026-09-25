@@ -3,7 +3,10 @@
 # Portfolio EVANN // ROOT ACCESS — image de production.
 # Étape 1 : build Next.js en export statique (dossier out/).
 # Étape 2 : nginx non privilégié qui sert les fichiers sur le port 8080.
-# Aucune variable d'environnement n'est nécessaire à l'exécution.
+# Aucune variable d'environnement n'est nécessaire à l'exécution. Au build :
+#   SITE_URL (adresse publique, défaut https://evann-bougoula.dagz.fr) pour la
+#   canonique, l'Open Graph, robots.txt et sitemap.xml ;
+#   GOOGLE_SITE_VERIFICATION (facultatif) pour la balise Search Console.
 # ------------------------------------------------------------------
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -12,6 +15,10 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
+ARG SITE_URL=https://evann-bougoula.dagz.fr
+ARG GOOGLE_SITE_VERIFICATION=
+ENV SITE_URL=$SITE_URL \
+    GOOGLE_SITE_VERIFICATION=$GOOGLE_SITE_VERIFICATION
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime

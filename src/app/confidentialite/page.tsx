@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { CONTACT_EMAIL, profile } from "@/data";
 import { LegalPage, LegalSection } from "@/components/legal/LegalPage";
+import { pageMetadata } from "@/lib/site";
 import { ManageConsentButton } from "@/components/consent/ConsentBanner";
 import { CONSENT_KEY } from "@/lib/consent";
 import { SESSION_KEYS, STORAGE_KEY } from "@/lib/storage";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/confidentialite",
   title: `Politique de confidentialité et CGU — ${profile.fullName}`,
   description:
     "Données du formulaire de contact, finalité, durée de conservation, stockage local et droits RGPD sur le portfolio d'Evann Bougoula.",
-  robots: { index: true, follow: true },
-};
+});
 
 const TOC = [
   { id: "responsable", label: "Responsable du traitement" },

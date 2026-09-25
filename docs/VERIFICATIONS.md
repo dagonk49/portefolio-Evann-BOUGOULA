@@ -10,14 +10,25 @@ post-traitement ; la v2.0 a apporté NetForge en ligne, le sas, le circuit exté
 | Vérification | Commande / méthode | Résultat |
 | --- | --- | --- |
 | Types | `npm run typecheck` (TypeScript 5.9, `strict`, `noUncheckedIndexedAccess`) | OK, 0 erreur |
-| Tests unitaires | `npm test` (Vitest) | **96 tests / 11 fichiers OK** (v3 : fiches E5, coordonnées, validation et service de contact, consentement) |
+| Tests unitaires | `npm test` (Vitest) | **101 tests / 12 fichiers OK** (v3 : fiches E5, coordonnées, validation et service de contact, consentement, référencement) |
 | Build | `npm run build` (Next.js 16, export statique) | OK : `/`, `/mentions-legales`, `/confidentialite`, `/cv` pré-rendues en HTML |
-| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **50 tests OK** (46 bureau + 4 mobile ; v3 : `v3.spec.ts`, `consent.spec.ts`, en-tête, liens, menu mobile) |
+| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **53 tests OK** (49 bureau + 4 mobile ; v3 : `v3.spec.ts`, `consent.spec.ts`, `seo.spec.ts`, en-tête, liens, menu mobile) |
 | Accessibilité automatique | axe-core (WCAG 2 A/AA) : mode sobre sombre fiches dépliées, pages légales, panneau de consentement ; v2.1 : HUD du lab avec tutoriel, fenêtre Options | 0 violation « serious » ou « critical » |
 | CSP | Console du navigateur (lab, transition, circuit, audio), en-têtes de `deploy/` | Aucune violation ; `frame-src https://netforge.dagz.fr` ajouté pour l'aperçu à la demande |
 | Audio | État du moteur lu via `window.__lab.state()` | Son coupé par défaut ; intro lancée en mode course (ou bouton si bloquée) ; fichier absent (404 simulé) → musique générée directement |
 | Image Docker | v1 : build + `docker run --read-only --tmpfs /tmp --cap-drop ALL`. v3 : `nginx -t` puis exécution de l'image officielle `nginx-unprivileged` (config et `out/` montés, lecture seule) et du service `contact` (Node 22 Alpine) sur un réseau Docker | Site servi (pages légales, CV en `application/pdf`, CSP) ; `POST /api/contact` relayé → 200 (envoi simulé) ; `GET` → 403 ; origine étrangère → 403 ; 16 envois rapides → 6 traités puis 429 (nginx) ; service arrêté → 504 et nginx redémarre quand même. **`docker compose build` non abouti ici** : `npm ci` dans les conteneurs refuse le certificat du proxy réseau de l'environnement de développement (pas en cause sur la VM) |
 | Impression | Chromium (PDF A4 et émulation `print`) | Portfolio complet : 21 pages ; fiche seule : 3 pages ; CV : 1 page |
+
+### Référencement (v3.1)
+
+- Build : `/robots.txt` (règles `User-Agent: *`, `Allow: /`, `Disallow: /api/`, `Sitemap:`) et `/sitemap.xml` (3 URL)
+  générés en fichiers statiques ; balise canonique propre à chaque page (accueil, mentions légales, confidentialité),
+  `og:url`, `og:image` 1200 × 630 (`image/png`), carte Twitter large ; JSON-LD `WebSite` + `ProfilePage` + `Person` valide
+  (JSON analysé dans le test) ; `/cv` en `noindex`, sans canonique ni entrée de sitemap.
+- Variables de build : `SITE_URL=https://exemple.test` change canonique et `Sitemap:` ; `GOOGLE_SITE_VERIFICATION=…` ajoute la
+  balise `google-site-verification`, absente sans variable.
+- Non vérifiable d'ici : le site en ligne (`evann-bougoula.dagz.fr` n'est pas joignable depuis l'environnement de
+  développement), le comportement de Cloudflare devant `robots.txt`, la validation Search Console et la zone DNS.
 
 ### Version 3.0 (mode sobre « norme BTS SIO & conformité FR »)
 
