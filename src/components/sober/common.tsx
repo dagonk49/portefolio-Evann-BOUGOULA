@@ -1,19 +1,31 @@
 import type { ContentRef, SkillContextKind } from "@/data/types";
 import { anchorFor, getEducation, getExperience, getHobby, getProject, organizationName } from "@/data";
 
-export function SectionHeading({ id, index, title, lead }: { id: string; index: string; title: string; lead?: string }) {
+export function SectionHeading({ id, index, title, lead }: { id: string; index: string; title: string; lead?: React.ReactNode }) {
   return (
     <header className="section-head">
       <p className="section-head__index mono" aria-hidden="true">
-        {index}
+        {index} /
       </p>
-      <div>
+      <div className="section-head__text">
         <h2 id={id} tabIndex={-1}>
           {title}
         </h2>
         {lead ? <p className="section-head__lead">{lead}</p> : null}
       </div>
     </header>
+  );
+}
+
+/** Titre de sous-partie (h3) ; l'identifiant sert d'ancre depuis le lab 3D et le terminal. */
+export function SubHeading({ id, title, meta }: { id: string; title: string; meta?: React.ReactNode }) {
+  return (
+    <div className="sub-head">
+      <h3 id={id} tabIndex={-1}>
+        {title}
+      </h3>
+      {meta ? <p className="sub-head__meta mono">{meta}</p> : null}
+    </div>
   );
 }
 
@@ -55,15 +67,4 @@ export function refShortLabel(ref: ContentRef): string {
 
 export function RefLink({ refTo, children }: { refTo: ContentRef; children?: React.ReactNode }) {
   return <a href={`#${anchorFor(refTo)}`}>{children ?? refShortLabel(refTo)}</a>;
-}
-
-/** Petit panneau de brassage décoratif (référence visuelle au lab). */
-export function PatchStrip({ lit = [1, 2, 5] }: { lit?: number[] }) {
-  return (
-    <span className="patch-strip" aria-hidden="true">
-      {Array.from({ length: 8 }, (_, i) => (
-        <span key={i} className={lit.includes(i) ? "is-lit" : undefined} />
-      ))}
-    </span>
-  );
 }

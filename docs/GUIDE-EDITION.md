@@ -14,18 +14,47 @@ Les tests de `src/data/data.test.ts` vérifient notamment que toutes les référ
 
 `src/data/profile.ts` → objet `profile` :
 
+- `status` (lignes sous le nom : poste, formation), `mobility` (permis, véhicule, secteur, modes de travail) ;
 - `headline`, `location`, `currentTraining`, `tagline`, `about` (paragraphes), `practiceScopes` (entreprise / formation / pratique personnelle) ;
 - `featuredSkills` : identifiants de compétences mises en avant dans l'en-tête ;
-- `contacts` : chaque entrée apparaît dans le mode sobre, la borne contact du lab et la commande `contact`.
-  Exemple d'ajout (uniquement avec de vraies valeurs) :
+- `contacts` : email, LinkedIn et GitHub (constantes `CONTACT_EMAIL`, `LINKEDIN_URL`, `GITHUB_URL` en tête du fichier) ;
+  chaque entrée apparaît dans l'accroche, la section Contact, la borne contact du lab et les commandes `contact`, `email`,
+  `github`, `linkedin`. L'adresse de destination du formulaire se règle séparément (`CONTACT_TO` du service `server/`).
+- `cvFile` (`CV_FILE`) : `/CV_Evann_Bougoula.pdf`. Le fichier publié est **généré** depuis la page `/cv` :
+  `npm run build && npm run cv` (Chromium requis ; `CHROMIUM_PATH=/chemin/vers/chromium` si besoin). Pour publier votre propre CV,
+  remplacez simplement `public/CV_Evann_Bougoula.pdf` par votre fichier (même nom) et ne relancez plus `npm run cv`.
 
-  ```ts
-  { id: "email", label: "Email", href: "mailto:prenom.nom@exemple.fr", display: "prenom.nom@exemple.fr" },
-  { id: "github", label: "GitHub", href: "https://github.com/mon-compte", display: "github.com/mon-compte" },
-  ```
+## Réalisations professionnelles (fiches E5)
 
-- `cvFile` : déposez le PDF dans `public/` (ex. `public/cv-evann-bougoula.pdf`) puis indiquez `"/cv-evann-bougoula.pdf"`.
-  Le bouton « Télécharger mon CV » et la commande `cv` l'utiliseront à la place de l'impression.
+`src/data/realisations.ts` :
+
+- `e5Competences` : les six compétences du bloc 1 (colonnes du tableau de synthèse) ;
+- `realisations` : une entrée par fiche (`title`, `context`, `frame`, `period` — lien vers une expérience, date de début ou
+  libellé —, `role`, `summary`, `description`, `environment`, `competences` avec la façon dont chacune est mobilisée, `schema`,
+  `captures`, `documents`, `tests`, `related`, `links`).
+
+Ajouter vos preuves :
+
+1. **Capture** : déposez l'image (anonymisée) dans `public/realisations/` puis renseignez `src` et `alt` de l'entrée
+   correspondante dans `captures`. Le libellé « capture non jointe » disparaît.
+2. **Document** (procédure d'installation, guide d'exploitation / MCO, guide utilisateur) : déposez le PDF dans
+   `public/realisations/` et renseignez `href`. Un bouton « Ouvrir le document (PDF) » remplace la mention.
+3. **Recette** : pour chaque cas, renseignez `observed` (résultat réellement obtenu) et `status` (`"OK"` ou `"KO"`), à partir de
+   votre cahier de recette. Modifiez les cas et résultats attendus s'ils ne correspondent pas à ce que vous avez testé.
+4. Mettez à jour le test « fiches E5 » de `src/data/data.test.ts`, qui vérifie aujourd'hui qu'aucune preuve n'est renseignée.
+
+Schémas : `src/components/sober/Schemas.tsx` (nœuds, groupes, liens, en coordonnées SVG). Gardez des libellés génériques pour ce
+qui n'est pas publiable (équipements, numéros de VLAN, adressage d'un client ou de l'EFS).
+
+## Contact, consentement et pages légales
+
+- **Formulaire** : `src/components/sober/ContactForm.tsx`. Les règles de validation (longueurs, format d'email) sont dans
+  `server/contact-core.mjs`, partagé par le navigateur et le service d'envoi : modifiez-les à un seul endroit.
+- **Service d'envoi** : `server/` (voir le README pour les variables). Test local sans SMTP : `CONTACT_DRY_RUN=1 node server/index.mjs`.
+- **Consentement** : catégories et durées dans `src/lib/consent.ts` ; textes du bandeau dans
+  `src/components/consent/ConsentBanner.tsx`. Si vous ajoutez un jour un outil tiers (mesure d'audience, vidéo intégrée…),
+  ajoutez une catégorie, ne le chargez qu'après accord et complétez le tableau de `/confidentialite`.
+- **Pages légales** : `src/app/mentions-legales/page.tsx` et `src/app/confidentialite/page.tsx` (date de mise à jour en tête).
 
 ## Ajouter une expérience
 
@@ -75,7 +104,7 @@ il ne change jamais tout seul avec la date.
   `deploy/security-headers.inc` (un test vérifie qu'ils restent identiques).
 - Écran du bureau 3D : `drawNetForgeScreen` dans `src/game/textures.ts` ; dalle `bureau.netforge` dans `src/game/layout.ts`.
 
-## Modifier les loisirs (section « Hors de l'infra » et circuit)
+## Modifier les loisirs (« Centres d'intérêt » du parcours et circuit)
 
 `src/data/hobbies.ts` : `title`, `kicker`, `lines` (phrases à la première personne), `quote` facultative, `tags`.
 N'y mettez que ce qu'Evann a fourni (pas de rang, de temps de jeu ni de préférence supposée). Chaque loisir est ouvert par une

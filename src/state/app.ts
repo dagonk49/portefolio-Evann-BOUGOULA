@@ -298,7 +298,13 @@ export const useApp = create<AppStore>()((set, get) => ({
   savePlayer: (pos) => set((s) => ({ progress: { ...s.progress, player: pos } })),
 }));
 
-/* Sauvegarde différée après hydratation. */
+/** Écrit immédiatement l'état persistant (après un accord de consentement). */
+export function persistAppState(): void {
+  const { modePreference, settings, progress, world, isNascarUnlocked, audio, bestLap } = useApp.getState();
+  savePersisted<PersistedData>({ modePreference, settings, progress, world, isNascarUnlocked, audio, bestLap });
+}
+
+/* Sauvegarde différée après hydratation (sans effet tant que le visiteur n'a pas donné son accord). */
 if (typeof window !== "undefined") {
   let timer: number | undefined;
   useApp.subscribe((state, prev) => {
@@ -306,10 +312,7 @@ if (typeof window !== "undefined") {
     const keys = ["settings", "progress", "modePreference", "world", "isNascarUnlocked", "audio", "bestLap"] as const;
     if (keys.every((k) => state[k] === prev[k])) return;
     window.clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      const { modePreference, settings, progress, world, isNascarUnlocked, audio, bestLap } = useApp.getState();
-      savePersisted<PersistedData>({ modePreference, settings, progress, world, isNascarUnlocked, audio, bestLap });
-    }, 250);
+    timer = window.setTimeout(persistAppState, 250);
   });
 }
 

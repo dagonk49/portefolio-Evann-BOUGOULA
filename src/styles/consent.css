@@ -1,0 +1,224 @@
+/* Bandeau et panneau de consentement (CNIL) ------------------------------ */
+.consent {
+  position: fixed;
+  z-index: 90;
+  left: max(1rem, env(safe-area-inset-left));
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  max-width: 44rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid #3a3a41;
+  border-radius: 6px;
+  background: #0f0f12;
+  color: #f4f4f5;
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.9);
+}
+
+.consent__title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+}
+
+.consent p {
+  color: #d4d4d8;
+}
+
+.consent a,
+.consent-panel a {
+  color: #f4f4f5;
+}
+
+/* Trois boutons de même taille et de même style : refuser est aussi simple qu'accepter. */
+.consent-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.consent-actions .btn {
+  width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .consent {
+    padding: 1rem;
+    font-size: 0.82rem;
+  }
+  .consent-actions {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+  .consent-actions .btn {
+    min-height: 2.5rem;
+  }
+}
+
+.consent-panel {
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 1px solid #3a3a41;
+  border-radius: 6px;
+  background: #0f0f12;
+  color: #f4f4f5;
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.consent-panel::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.consent-panel form {
+  display: grid;
+  gap: 1rem;
+  padding: 1.3rem 1.4rem 1.4rem;
+}
+
+.consent-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.consent-panel__head h2 {
+  font-size: 1.15rem;
+}
+
+.consent-panel__x {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #3a3a41;
+  border-radius: 4px;
+  background: transparent;
+  color: #f4f4f5;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.consent-panel__intro,
+.consent-cat p,
+.consent-cat li {
+  color: #d4d4d8;
+}
+
+.consent-cat {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #232327;
+  border-radius: 4px;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.consent-cat legend {
+  padding: 0 0.3rem;
+  font-weight: 600;
+}
+
+.consent-cat ul {
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.86rem;
+}
+
+.consent-cat__always {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0 0.4rem;
+  border: 1px solid #3a3a41;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  color: #a1a1aa;
+}
+
+.consent-cat__note {
+  font-size: 0.8rem;
+  color: #a1a1aa !important;
+}
+
+.consent-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.consent-switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.consent-switch__track {
+  position: relative;
+  width: 2.5rem;
+  height: 1.4rem;
+  border: 1px solid #71717a;
+  border-radius: 999px;
+  background: #0a0a0c;
+  transition: background-color 0.15s ease;
+}
+
+.consent-switch__track::after {
+  content: "";
+  position: absolute;
+  top: 0.18rem;
+  left: 0.2rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  background: #a1a1aa;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.consent-switch input:checked + .consent-switch__track {
+  background: #f4f4f5;
+  border-color: #f4f4f5;
+}
+
+.consent-switch input:checked + .consent-switch__track::after {
+  transform: translateX(1.05rem);
+  background: #0a0a0c;
+}
+
+.consent-switch input:focus-visible + .consent-switch__track {
+  outline: 2px solid #f4f4f5;
+  outline-offset: 3px;
+}
+
+.consent-panel__more {
+  font-size: 0.82rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .consent-switch__track,
+  .consent-switch__track::after {
+    transition: none;
+  }
+}
+
+@media print {
+  .consent,
+  .consent-panel {
+    display: none !important;
+  }
+}

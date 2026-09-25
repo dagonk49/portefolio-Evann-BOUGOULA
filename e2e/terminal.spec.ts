@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { seedConsent } from "./helpers";
 
 test.describe("terminal du mode sobre", () => {
   test.beforeEach(async ({ page }) => {
+    await seedConsent(page);
     await page.goto("/#terminal");
   });
 
@@ -94,10 +96,22 @@ test.describe("terminal du mode sobre", () => {
     await expect(page.locator(".egg--valorant")).toHaveCount(1);
   });
 
-  test("cv sans fichier : proposition d'impression", async ({ page }) => {
+  test("github ouvre le profil ; email affiche l'adresse et un lien mailto", async ({ page, context }) => {
+    await context.route("https://github.com/**", (route) => route.fulfill({ status: 200, body: "ok" }));
     const box = input(page);
-    await box.fill("cv");
+    await box.fill("github");
+    const [popup] = await Promise.all([context.waitForEvent("page"), box.press("Enter")]);
+    await expect.poll(() => popup.url()).toContain("github.com/dagonk49");
+    expect(await popup.evaluate(() => window.opener)).toBeNull();
+    await popup.close();
+    await box.fill("email");
     await box.press("Enter");
-    await expect(page.locator(".terminal__action")).toHaveText("imprimer");
+    await expect(page.locator(".terminal__log")).toContainText("evann.bougoula@dagz.fr");
+    const mail = page.locator(".terminal__log a[href='mailto:evann.bougoula@dagz.fr']");
+    await expect(mail).toBeVisible();
+    await expect(mail).not.toHaveAttribute("target", "_blank");
+    await box.fill("e5");
+    await box.press("Enter");
+    await expect(page.locator(".terminal__log a[href='#realisation-homelab']")).toBeVisible();
   });
 });

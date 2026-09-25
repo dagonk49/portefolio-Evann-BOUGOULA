@@ -1,22 +1,52 @@
 # Vérifications exécutées
 
 Environnement : conteneur Linux, Node 22.22, Chromium headless (Playwright 1.63) avec rendu WebGL **logiciel** (SwiftShader).
-Date : septembre 2026 (version 2.1 : correctif des interfaces bloquées, options, tutoriel, stock-car masqué, post-traitement ;
-la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicules et l'audio).
+Date : septembre 2026 (version 3.0 : refonte du mode sobre, fiches E5, formulaire de contact et service d'envoi, consentement
+CNIL, pages légales, export PDF et CV ; la v2.1 a corrigé les interfaces bloquées et ajouté options, tutoriel et
+post-traitement ; la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicules et l'audio).
 
 ## Résultats
 
 | Vérification | Commande / méthode | Résultat |
 | --- | --- | --- |
 | Types | `npm run typecheck` (TypeScript 5.9, `strict`, `noUncheckedIndexedAccess`) | OK, 0 erreur |
-| Tests unitaires | `npm test` (Vitest) | **76 tests / 9 fichiers OK** |
-| Build | `npm run build` (Next.js 16, export statique) | OK, page `/` pré-rendue en HTML |
-| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **30 tests OK** (dont 4 nouveaux en v2.1 : `interfaces.spec.ts`) |
-| Accessibilité automatique | axe-core (WCAG 2 A/AA) sur le mode sobre ; v2.1 : HUD du lab avec tutoriel, fenêtre Options | 0 violation « serious » ou « critical » (mode sobre) ; 0 violation (HUD, Options) |
+| Tests unitaires | `npm test` (Vitest) | **96 tests / 11 fichiers OK** (v3 : fiches E5, coordonnées, validation et service de contact, consentement) |
+| Build | `npm run build` (Next.js 16, export statique) | OK : `/`, `/mentions-legales`, `/confidentialite`, `/cv` pré-rendues en HTML |
+| Tests de bout en bout | `npm run e2e` (Playwright, bureau 1440×900 + émulation Pixel 7) | **50 tests OK** (46 bureau + 4 mobile ; v3 : `v3.spec.ts`, `consent.spec.ts`, en-tête, liens, menu mobile) |
+| Accessibilité automatique | axe-core (WCAG 2 A/AA) : mode sobre sombre fiches dépliées, pages légales, panneau de consentement ; v2.1 : HUD du lab avec tutoriel, fenêtre Options | 0 violation « serious » ou « critical » |
 | CSP | Console du navigateur (lab, transition, circuit, audio), en-têtes de `deploy/` | Aucune violation ; `frame-src https://netforge.dagz.fr` ajouté pour l'aperçu à la demande |
 | Audio | État du moteur lu via `window.__lab.state()` | Son coupé par défaut ; intro lancée en mode course (ou bouton si bloquée) ; fichier absent (404 simulé) → musique générée directement |
-| Image Docker | v1 : build + `docker run --read-only --tmpfs /tmp --cap-drop ALL` | OK en v1. **Non reconstruite pour la v2** : `Dockerfile`, `compose.yaml` et `nginx.conf` sont inchangés, seuls les fichiers servis et les en-têtes ont évolué |
-| Impression | Émulation `print` dans Chromium (v1) | En-tête, boutons, terminal masqués ; règles d'impression ajoutées pour la carte NetForge (non réimprimée) |
+| Image Docker | v1 : build + `docker run --read-only --tmpfs /tmp --cap-drop ALL`. v3 : `nginx -t` puis exécution de l'image officielle `nginx-unprivileged` (config et `out/` montés, lecture seule) et du service `contact` (Node 22 Alpine) sur un réseau Docker | Site servi (pages légales, CV en `application/pdf`, CSP) ; `POST /api/contact` relayé → 200 (envoi simulé) ; `GET` → 403 ; origine étrangère → 403 ; 16 envois rapides → 6 traités puis 429 (nginx) ; service arrêté → 504 et nginx redémarre quand même. **`docker compose build` non abouti ici** : `npm ci` dans les conteneurs refuse le certificat du proxy réseau de l'environnement de développement (pas en cause sur la VM) |
+| Impression | Chromium (PDF A4 et émulation `print`) | Portfolio complet : 21 pages ; fiche seule : 3 pages ; CV : 1 page |
+
+### Version 3.0 (mode sobre « norme BTS SIO & conformité FR »)
+
+- **Refonte visuelle** : captures à 1 440, 768 et 390 px (Pixel 7) de chaque section ; **aucun défilement horizontal**
+  (`scrollWidth = clientWidth`) aux trois largeurs, fiches E5 dépliées. Un premier passage débordait à 390 px : les libellés
+  `.sr-only` des tableaux (position absolue) échappaient à leur zone de défilement ; corrigé (`position: relative` sur les
+  conteneurs) et vérifié par le test mobile.
+- **Fiches E5** : tableau de synthèse (6 lignes, 6 compétences), six fiches en sept parties, schémas SVG relus un par un
+  (une étiquette qui débordait sur le schéma NetForge a été retirée), recette « non consignée » partout (test unitaire + E2E).
+- **Impression** : PDF du portfolio complet (21 pages A4) et d'une fiche seule (3 pages) générés avec Chromium ; en-tête
+  imprimé (coordonnées, synthèse, chronologie, compétences), fond blanc, interface masquée, schémas en noir sur blanc.
+  Les boutons « Exporter » sont testés avec `window.print` remplacé par un enregistreur (fiches dépliées au moment de
+  l'impression, fiche ciblée seule, état restauré ensuite).
+- **CV** : `public/CV_Evann_Bougoula.pdf` généré par `npm run cv` (1 page A4, 186 Ko), servi en `application/pdf`,
+  téléchargé par le bouton et par la commande `cv`.
+- **Formulaire et service** : validation navigateur (4 champs signalés, focus, `aria-invalid`), envoi réussi sans rechargement
+  (service simulé de `serve.mjs`), erreur 502 simulée → saisie conservée et lien `mailto:` prérempli ; tests unitaires du
+  service réel (`src/lib/contact.test.ts`) : 405, 415, 403 (origine), 400, 422, 413, champ piège, limitation de débit (429 puis
+  reprise après la fenêtre), échec SMTP sans fuite du message d'erreur, formulaire sans JavaScript (303). `server/index.mjs`
+  lancé en `CONTACT_DRY_RUN=1` : `/healthz`, envoi simulé, origine refusée, journal sans contenu.
+- **nginx** : `nginx -t` OK dans l'image `nginx-unprivileged` (bloc `/api/contact`, `limit_req_zone`, `resolver`).
+- **Consentement** : bandeau au premier passage, trois boutons de même taille et de même style, rien d'écrit avant le choix,
+  refus mémorisé sans préférence stockée, accord → écriture immédiate, « Personnaliser » sans case précochée, retrait depuis
+  « Gérer les cookies » (données effacées), Échap sans effet, choix de plus de 6 mois redemandé, préférences de plus de 13 mois
+  ignorées (tests unitaires `src/lib/consent.test.ts`).
+- **Pages légales** : contenu (éditeur, publication, hébergement, propriété intellectuelle ; finalité, 3 ans, aucun tiers,
+  droits, CGU), axe sans violation grave, retour au portfolio.
+- **Accessibilité** : axe (WCAG 2 A/AA) sur le thème sombre avec toutes les fiches dépliées, sur les deux pages légales et sur
+  le panneau de consentement : 0 violation « serious » ou « critical ».
 
 ### Version 2.1
 
@@ -64,6 +94,16 @@ la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicu
 - **Interactions** : anomalies du lab sur l'île, anomalies du circuit dans l'infield hors piste, points d'intérêt séparés par monde,
   sas dans les deux sens.
 - **IPv4**, **règles d'interaction du lab** (placements, hystérésis, zones) et **synchronisation des en-têtes** nginx / Node.
+- **Données v3** : coordonnées (email, LinkedIn, GitHub), CV, statut et mobilité ; cinq certifications, Pix et travail en hauteur
+  sans date supposée ; six fiches E5 numérotées, compétences et références valides, périodes résolues, trois documents par fiche,
+  **aucun résultat de recette, capture ni document renseigné**, aucun PowerShell, CCNA, N2 ni technologie inventée.
+- **Terminal v3** : `github` (onglet + lien de secours), `email` (adresse + `mailto:`, rien d'ouvert d'office), `cv`
+  (téléchargement + lien), `realisations` / `e5` (six liens vers les fiches), `whoami` avec statut et mobilité.
+- **Contact** (`src/lib/contact.test.ts`, 12 cas) : validation (champs obligatoires, organisation facultative, emails invalides,
+  longueurs), retrait des CR/LF des champs d'une ligne, message multiligne conservé, email construit avec `Reply-To` ; service
+  HTTP réel sur un port local (codes 200, 303, 400, 403, 405, 413, 415, 422, 429, 502).
+- **Consentement** (`src/lib/consent.test.ts`) : rien lu ni écrit sans accord, accord puis refus, expiration du choix (6 mois)
+  et des préférences (13 mois), enregistrements malformés ignorés.
 
 ### Parcours vérifiés dans le navigateur (E2E)
 
@@ -72,9 +112,12 @@ la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicu
 - **NetForge** : badges, bouton `target="_blank" rel="noopener noreferrer"` avec « ↗ », mention « Maquette illustrative », plus
   aucune démonstration VLSM ; **aucune requête vers netforge.dagz.fr** tant que l'aperçu en direct n'est pas demandé, puis iframe
   isolée (`sandbox`, `referrerpolicy="no-referrer"`).
-- **Loisirs** : section « Hors de l'infra » dans la navigation, quatre fiches, textes exacts.
+- **Loisirs** : quatre fiches « Centres d'intérêt » dans le parcours, textes exacts.
 - Lien d'évitement et focus clavier.
-- **Sans WebGL** : bouton « Explorer mon lab (3D) » signalé indisponible, bascule désactivée, parcours accessible.
+- **Sans WebGL** : boutons « Basculer en 3D » (accroche et en-tête) signalés indisponibles, parcours accessible.
+- **En-tête v3** : sept liens dans l'ordre demandé, indicateur `aria-current` qui suit la section, en-tête fixe ; menu mobile
+  (Échap, fermeture au choix d'une section) ; liens externes limités à GitHub, LinkedIn et NetForge, seul `mailto:` vers
+  evann.bougoula@dagz.fr ; toutes les pages et fichiers liés répondent 200.
 - **Stockage bloqué** : le site fonctionne et l'indique dans le pied de page.
 - Terminal : commandes, casse, historique ↑/↓, `clear`, `history`, contenu non interprété comme HTML, Tab qui complète puis
   laisse passer le focus, Échap qui quitte, **`google`** : nouvel onglet ouvert, `window.opener` nul, onglet du portfolio inchangé,
@@ -110,8 +153,9 @@ la v2.0 a apporté NetForge en ligne, le sas, le circuit extérieur, les véhicu
 
 | Mesure | Valeur mesurée |
 | --- | --- |
-| HTML de la page | 142 Ko (25 Ko gzip) |
-| JS + CSS chargés à l'arrivée | 729 Ko (220 Ko gzip), dont React/Next.js pour l'essentiel |
+| HTML de la page | 379 Ko (53 Ko gzip) — v3 : six fiches E5 complètes et leurs schémas dans le HTML statique |
+| JS + CSS chargés à l'arrivée | 776 Ko (230 Ko gzip), dont React/Next.js pour l'essentiel |
+| Pages légales / CV | 22 Ko et 27 Ko de HTML ; `CV_Evann_Bougoula.pdf` ≈ 187 Ko |
 | Chunks 3D, chargés à la demande | 3,68 Mo (1,24 Mo gzip) : Three.js, R3F, drei, Rapier (WASM intégré), postprocessing, lab et circuit |
 | Intro audio (mode course uniquement) | 1,08 Mo (AAC) ou 327 Ko (Opus), téléchargée seulement une fois le mode course activé |
 | Appels de dessin par image, qualité élevée (post-traitement compris) : lab (baie) / circuit (arrivée) | 360 / ≈ 330 |
@@ -138,6 +182,13 @@ et des fichiers de `out/`.
 - **Conduite réelle** : la physique des véhicules n'a été éprouvée qu'à ≈ 3 images/s (pas fixe de 1/60 s, donc même résultat
   physique, mais sans ressenti de pilotage). Le réglage fin (`SPECS`) se fera sur une machine avec GPU.
 - **Droits de l'intro audio** : fichier fourni par Evann, source non documentée (voir `INFOS-MANQUANTES.md`).
+- **Envoi d'email réel** : aucun SMTP n'est configuré ici ; le service a été testé en envoi simulé et avec un transport de test.
+  L'envoi réel (authentification, TLS, délivrabilité, SPF/DKIM du domaine) reste à vérifier sur la VM avec `server/.env`.
+- **Impression dans d'autres navigateurs** : la mise en page PDF a été vérifiée dans Chromium seulement ; l'ouverture des fiches
+  repose sur l'événement `beforeprint` (Firefox et Safari le déclenchent aussi, non essayé).
+- **Contenu juridique** : les mentions légales et la politique de confidentialité ont été rédigées d'après les obligations
+  connues (LCEN, RGPD, recommandations CNIL sur les traceurs) mais n'ont pas été relues par un juriste ; l'adresse de
+  l'hébergeur reste à compléter si elle doit être publiée (voir `INFOS-MANQUANTES.md`).
 - **NetForge** : `https://netforge.dagz.fr` n'a pas pu être ouvert depuis l'environnement de développement ; le bouton pointe vers
   l'URL fournie. L'aperçu intégré dépend des en-têtes du site (il peut refuser d'être affiché dans une iframe : le texte le signale).
 - **Bloqueur de fenêtres** : le cas où le navigateur bloque l'onglet Google n'a pas été simulé ; le lien de secours est vérifié.

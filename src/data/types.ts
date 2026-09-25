@@ -35,7 +35,7 @@ export type ExperienceId =
 
 export type EducationId = "bts-sio-sisr" | "bac-pro-ciel";
 
-export type CertificationId = "habilitation-b1v" | "sst" | "cisco-intro-cybersecurity";
+export type CertificationId = "habilitation-b1v" | "sst" | "cisco-intro-cybersecurity" | "pix" | "travail-hauteur";
 
 export type ProjectId = "netforge" | "portfolio";
 
@@ -153,8 +153,11 @@ export interface Education {
 export interface Certification {
   id: CertificationId;
   name: string;
-  issuer: string;
-  issuedAt: YearMonth;
+  issuer?: string;
+  /** Absente quand la date n'a pas été fournie : rien n'est affiché plutôt qu'une date supposée. */
+  issuedAt?: YearMonth;
+  /** Précision de contenu (ex. : types d'équipements couverts). */
+  details?: string;
   expiresAt?: YearMonth;
   /** Précision affichée pour éviter toute confusion (ex. : pas un CCNA). */
   clarification?: string;
@@ -273,6 +276,14 @@ export interface Profile {
   contacts: ContactChannel[];
   /** Fichier de CV publié (chemin sous /public). `null` tant qu'aucun fichier n'est fourni. */
   cvFile: string | null;
+  /** Lignes de statut affichées sous le nom (poste, formation). */
+  status: string[];
+  mobility: {
+    license: string;
+    vehicle: string;
+    areas: string[];
+    workModes: string[];
+  };
   provenance: Provenance;
 }
 
@@ -325,4 +336,76 @@ export interface Anomaly {
   fragments: string[];
   /** Si défini, l'anomalie n'apparaît qu'après cette interaction. */
   revealedBy?: "mission:lab-online";
+}
+
+/* ------------------------------------------------------------------ */
+/* Réalisations professionnelles — tableau de synthèse E5 (BTS SIO SISR)  */
+/* ------------------------------------------------------------------ */
+
+/** Compétences du bloc 1 « Support et mise à disposition de services informatiques ». */
+export type E5CompetenceId = "patrimoine" | "incidents" | "presence-en-ligne" | "projet" | "service" | "developpement-pro";
+
+export interface E5Competence {
+  id: E5CompetenceId;
+  /** Intitulé du référentiel. */
+  title: string;
+  /** Libellé court pour le tableau de synthèse. */
+  short: string;
+  /** Ce que la compétence recouvre (activités du référentiel). */
+  scope: string;
+}
+
+export type RealisationId = "efs-ad-parc" | "netforge" | "ventoy" | "proxmox-debian" | "unifi-wifi" | "homelab";
+
+export type SchemaId = "ad" | "netforge" | "ventoy" | "proxmox" | "unifi" | "homelab";
+
+export interface RealisationTest {
+  /** Cas testé. */
+  case: string;
+  expected: string;
+  /** Résultat réellement obtenu : renseigné uniquement à partir du cahier de recette d'Evann. */
+  observed?: string;
+  status?: "OK" | "KO";
+}
+
+export interface RealisationCapture {
+  id: string;
+  /** Légende : ce que la capture montre et pourquoi. */
+  caption: string;
+  /** Image sous /public ; absente tant que la capture n'est pas fournie. */
+  src?: string;
+  alt?: string;
+}
+
+export interface RealisationDocument {
+  kind: "installation" | "exploitation" | "utilisateur";
+  title: string;
+  /** PDF sous /public ; absent tant que le document n'est pas fourni. */
+  href?: string;
+}
+
+export interface Realisation {
+  id: RealisationId;
+  number: number;
+  title: string;
+  context: "Entreprise" | "Formation" | "HomeLab" | "Projet personnel";
+  /** Organisation ou cadre (« EFS — DSI régionale », « Pratique personnelle »…). */
+  frame: string;
+  /** Période : via l'expérience liée, une date de début, ou un libellé. */
+  period: { experienceId: string } | { since: YearMonth } | { label: string };
+  role: string;
+  summary: string;
+  description: string[];
+  /** Technologies et outils documentés pour cette réalisation. */
+  environment: string[];
+  competences: { id: E5CompetenceId; how: string }[];
+  schema: SchemaId;
+  schemaCaption: string;
+  captures: RealisationCapture[];
+  documents: RealisationDocument[];
+  tests: RealisationTest[];
+  related: ContentRef[];
+  links?: ProjectLink[];
+  provenance: Provenance;
+  editorialNotes?: string[];
 }

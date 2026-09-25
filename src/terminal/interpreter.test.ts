@@ -7,7 +7,7 @@ const text = (r: CommandResult) => r.lines.map((l) => l.map((s) => s.text).join(
 describe("terminal", () => {
   it("help liste les commandes publiques, pas les easter eggs", () => {
     const r = text(execute("help", ctx));
-    for (const c of ["whoami", "about", "skills", "experience", "education", "certifications", "projects", "netforge", "homelab", "contact", "linkedin", "cv", "clear", "history", "gui", "google"]) {
+    for (const c of ["whoami", "about", "skills", "experience", "education", "certifications", "projects", "netforge", "homelab", "contact", "linkedin", "github", "email", "realisations", "cv", "clear", "history", "gui", "google"]) {
       expect(r).toContain(c);
     }
     expect(r).not.toMatch(/valorant|minecraft|gta|sudo|cars|racer|nascar/);
@@ -44,9 +44,37 @@ describe("terminal", () => {
     expect(r.effects[0]).toEqual({ type: "open-url", url: "https://www.linkedin.com/in/evann-bougoula" });
   });
 
-  it("cv sans fichier propose l'impression", () => {
+  it("cv déclenche le téléchargement du PDF, avec un lien de secours", () => {
     const r = execute("cv", ctx);
-    expect(r.lines.flat().some((s) => s.kind === "action" && s.action === "print")).toBe(true);
+    expect(r.effects).toEqual([{ type: "download", url: "/CV_Evann_Bougoula.pdf", filename: "CV_Evann_Bougoula.pdf" }]);
+    expect(r.lines.flat().some((s) => s.kind === "link" && s.href === "/CV_Evann_Bougoula.pdf")).toBe(true);
+  });
+
+  it("github ouvre le profil, email affiche l'adresse et un lien mailto", () => {
+    const gh = execute("github", ctx);
+    expect(gh.effects).toEqual([{ type: "open-url", url: "https://github.com/dagonk49" }]);
+    expect(gh.lines.flat().some((s) => s.kind === "link" && s.href === "https://github.com/dagonk49")).toBe(true);
+    const mail = execute("email", ctx);
+    expect(text(mail)).toContain("evann.bougoula@dagz.fr");
+    expect(mail.effects).toEqual([]);
+    expect(mail.lines.flat().some((s) => s.kind === "link" && s.href === "mailto:evann.bougoula@dagz.fr")).toBe(true);
+  });
+
+  it("whoami reprend le statut v3 ; realisations liste les six fiches E5", () => {
+    const who = text(execute("whoami", ctx));
+    expect(who).toContain("Établissement Français du Sang (EFS)");
+    expect(who).toContain("MyDigitalSchool Angers");
+    expect(who).toContain("Permis B");
+    const r = execute("e5", ctx);
+    const links = r.lines.flat().filter((s) => s.kind === "link");
+    expect(links.map((l) => (l.kind === "link" ? l.href : ""))).toEqual([
+      "#realisation-efs-ad-parc",
+      "#realisation-netforge",
+      "#realisation-ventoy",
+      "#realisation-proxmox-debian",
+      "#realisation-unifi-wifi",
+      "#realisation-homelab",
+    ]);
   });
 
   it("easter eggs et variantes", () => {

@@ -54,3 +54,15 @@ export function isoMonth(ym: YearMonth): string {
 export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+/**
+ * Ligne de métadonnées d'une certification : n'affiche que ce qui a été fourni
+ * (organisme, date de délivrance, échéance), sans supposer de date.
+ */
+export function certificationMeta(c: { issuer?: string; issuedAt?: YearMonth; expiresAt?: YearMonth }): string {
+  const parts: string[] = [];
+  if (c.issuer) parts.push(c.issuer);
+  if (c.issuedAt) parts.push(`délivrée en ${formatMonth(c.issuedAt)}`);
+  if (c.expiresAt) parts.push(`expire en ${formatMonth(c.expiresAt)}`);
+  return parts.join(" · ");
+}

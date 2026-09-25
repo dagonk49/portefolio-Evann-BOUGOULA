@@ -1,0 +1,17 @@
+{
+  "name": "evann-portfolio-contact",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Service d'envoi du formulaire de contact du portfolio (Nodemailer).",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "engines": {
+    "node": ">=20.9"
+  },
+  "dependencies": {
+    "nodemailer": "^7.0.0"
+  }
+}

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { enterLab, seedSettings, STORAGE_KEY, teleport, waitActive } from "./helpers";
+import { enterLab, launchButton, seedSettings, STORAGE_KEY, teleport, waitActive } from "./helpers";
 
 const PC_PAD: [number, number] = [10.45, -19.7];
 const BAY_PAD: [number, number] = [-19.7, 8.8];
@@ -104,7 +104,7 @@ test.describe("interfaces du mode 3D (v2.1)", () => {
     // Sortie puis retour dans le lab pendant la même session : toujours masqué.
     await page.locator(".mode-switch").click();
     await expect(page.locator(".lab-root")).toHaveCount(0);
-    await page.locator(".mode-switch").click();
+    await launchButton(page).click();
     await page.locator(".hud").waitFor({ timeout: 90_000 });
     await expect(page.locator(".hud-guide")).toHaveCount(0);
   });

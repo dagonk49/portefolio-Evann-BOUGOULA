@@ -19,7 +19,8 @@ import {
   summarize,
 } from "@/data";
 import type { AnomalyId, ContentRef, Skill } from "@/data/types";
-import { formatMonth, formatPeriod } from "@/lib/format";
+import { certificationMeta, formatMonth, formatPeriod } from "@/lib/format";
+import { printPortfolio } from "@/lib/print";
 import { useApp } from "@/state/app";
 import { NetForgeLaunch } from "@/components/NetForgeLaunch";
 import { Dialog, Tabs } from "./Dialog";
@@ -120,10 +121,8 @@ function CertificationsBody() {
       {certifications.map((c) => (
         <li key={c.id}>
           <p className="lab-strong">{c.name}</p>
-          <p className="lab-meta lab-mono">
-            {c.issuer} · délivrée en {formatMonth(c.issuedAt)}
-            {c.expiresAt ? ` · expire en ${formatMonth(c.expiresAt)}` : ""}
-          </p>
+          {certificationMeta(c) ? <p className="lab-meta lab-mono">{certificationMeta(c)}</p> : null}
+          {c.details ? <p className="lab-muted">{c.details}</p> : null}
           {c.clarification ? <p className="lab-muted">{c.clarification}</p> : null}
         </li>
       ))}
@@ -325,15 +324,23 @@ function ContactBody() {
           </a>
         );
       })}
+      {profile.cvFile ? (
+        <a className="lab-btn" href={profile.cvFile} download="CV_Evann_Bougoula.pdf">
+          Télécharger le CV (PDF)
+        </a>
+      ) : null}
+      <button type="button" className="lab-btn" onClick={() => setMode("sober", { anchor: "contact" })}>
+        Écrire via le formulaire de contact
+      </button>
       <button
         type="button"
         className="lab-btn"
         onClick={() => {
           setMode("sober", { anchor: "contact" });
-          window.setTimeout(() => window.print(), 400);
+          window.setTimeout(printPortfolio, 400);
         }}
       >
-        Imprimer mon parcours
+        Exporter le Portfolio (PDF)
       </button>
     </>
   );

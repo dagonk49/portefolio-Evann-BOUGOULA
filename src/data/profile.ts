@@ -17,7 +17,17 @@ export const SOURCE_HOMELAB: Provenance = {
   note: "Description de son organisation par Evann, pas une mesure en direct.",
 };
 
+export const SOURCE_V3: Provenance = {
+  source: "brief-evann",
+  asOf: "2026-09",
+  note: "Brief v3.0 : coordonnées vérifiées, mobilité, certifications complémentaires, réalisations E5.",
+};
+
 export const LINKEDIN_URL = "https://www.linkedin.com/in/evann-bougoula";
+export const GITHUB_URL = "https://github.com/dagonk49";
+export const CONTACT_EMAIL = "evann.bougoula@dagz.fr";
+/** CV publié sous /public (voir docs/GUIDE-EDITION.md pour le remplacer par la version d'Evann). */
+export const CV_FILE = "/CV_Evann_Bougoula.pdf";
 
 export const profile: Profile = {
   firstName: "Evann",
@@ -51,13 +61,35 @@ export const profile: Profile = {
   featuredSkills: ["proxmox", "docker", "debian", "cisco-ios", "ubiquiti-unifi"],
   contacts: [
     {
+      id: "email",
+      label: "Email",
+      href: `mailto:${CONTACT_EMAIL}`,
+      display: CONTACT_EMAIL,
+    },
+    {
       id: "linkedin",
       label: "LinkedIn",
       href: LINKEDIN_URL,
       display: "linkedin.com/in/evann-bougoula",
     },
+    {
+      id: "github",
+      label: "GitHub",
+      href: GITHUB_URL,
+      display: "github.com/dagonk49",
+    },
   ],
-  cvFile: null,
+  cvFile: CV_FILE,
+  status: [
+    "Alternant technicien informatique chez Établissement Français du Sang (EFS)",
+    "Étudiant en BTS SIO SISR à MyDigitalSchool Angers",
+  ],
+  mobility: {
+    license: "Permis B",
+    vehicle: "Véhicule personnel",
+    areas: ["Angers", "Nantes", "Ancenis", "Candé"],
+    workModes: ["Présentiel", "Télétravail"],
+  },
   provenance: SOURCE_LINKEDIN,
 };
 

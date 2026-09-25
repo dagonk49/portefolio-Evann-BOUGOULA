@@ -3,7 +3,8 @@
  * Bandeau d'accueil pour les débutants : discret, en bas de l'écran, jamais
  * bloquant (on peut marcher et interagir pendant qu'il est affiché).
  *
- * - « Compris » : masqué pour la session (sessionStorage) ;
+ * - « Compris » : masqué pour la session (sessionStorage si le visiteur a
+ *   accepté le stockage des préférences, en mémoire sinon) ;
  * - « Ignorer le tutoriel » : masqué définitivement (réglage persisté) ;
  * - la première interaction réussie avec une borne le termine d'elle-même.
  */
@@ -11,10 +12,16 @@ import { useState } from "react";
 import type { WorldId } from "@/data/types";
 import { useApp } from "@/state/app";
 import { hasCoarsePointer } from "@/lib/device";
+import { preferencesAllowed } from "@/lib/consent";
+import { SESSION_KEYS } from "@/lib/storage";
 
-const SESSION_KEY = "evann-tutorial-hidden";
+const SESSION_KEY = SESSION_KEYS[0];
+/** Sans accord pour le stockage : masquage en mémoire, le temps de la visite. */
+const hiddenInMemory = new Set<WorldId>();
 
 function hiddenForSession(world: WorldId): boolean {
+  if (hiddenInMemory.has(world)) return true;
+  if (!preferencesAllowed()) return false;
   try {
     return (sessionStorage.getItem(SESSION_KEY) ?? "").split(",").includes(world);
   } catch {
@@ -23,6 +30,8 @@ function hiddenForSession(world: WorldId): boolean {
 }
 
 function hideForSession(world: WorldId): void {
+  hiddenInMemory.add(world);
+  if (!preferencesAllowed()) return;
   try {
     const list = new Set((sessionStorage.getItem(SESSION_KEY) ?? "").split(",").filter(Boolean));
     list.add(world);

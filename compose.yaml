@@ -1,8 +1,12 @@
 # Exemple pour la VM Docker du HomeLab.
+#   cp server/.env.example server/.env   # puis renseigner le SMTP
 #   docker compose up -d --build
 # Le site est servi sur http://<ip-de-la-vm>:8080
 # Derrière Nginx Proxy Manager : créer un « Proxy Host » vers evann-portfolio:8080
 # (même réseau Docker) ou vers <ip-de-la-vm>:8080, et activer le certificat TLS côté NPM.
+#
+# Le formulaire de contact : nginx (portfolio) relaie POST /api/contact vers le
+# service « contact » (Nodemailer), joignable uniquement sur le réseau interne.
 services:
   portfolio:
     build: .
@@ -18,10 +22,28 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    networks:
+      - portfolio
     # Décommentez pour rejoindre le réseau de Nginx Proxy Manager au lieu d'exposer le port :
-    # networks:
     #   - npm_default
 
-# networks:
+  contact:
+    build: ./server
+    image: evann-portfolio-contact:latest
+    container_name: evann-portfolio-contact
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - portfolio
+    # Aucun port publié : seul nginx (service portfolio) y accède.
+
+networks:
+  portfolio: {}
 #   npm_default:
 #     external: true

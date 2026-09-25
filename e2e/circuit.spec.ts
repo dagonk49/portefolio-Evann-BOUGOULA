@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { enterLab, seedSettings, STORAGE_KEY, teleport, waitActive, waitIdle } from "./helpers";
+import { enterLab, seedConsent, seedSettings, STORAGE_KEY, teleport, waitActive, waitIdle } from "./helpers";
 
 const LAB_SAS: [number, number] = [-18.6, -21.3];
 const CIRCUIT_SAS: [number, number] = [0, 9.5];
@@ -57,6 +57,8 @@ test.describe("circuit extérieur", () => {
   });
 
   test("cars : mode course mémorisé, arrivée en stock-car et intro sonore", async ({ page }) => {
+    // Mémorisation du mode course : uniquement avec l'accord du visiteur (catégorie « Préférences et progression »).
+    await seedConsent(page);
     await page.goto("/#terminal");
     const box = page.getByLabel("Saisir une commande");
     await box.fill("cars");

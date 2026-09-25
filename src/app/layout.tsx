@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/inter/index.css";
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
@@ -9,11 +10,13 @@ import "@/styles/base.css";
 import "@/styles/sober.css";
 import "@/styles/terminal.css";
 import "@/styles/lab.css";
+import "@/styles/consent.css";
 import "@/styles/print.css";
 import { profile } from "@/data";
+import { ConsentBanner } from "@/components/consent/ConsentBanner";
 
-const title = `${profile.fullName} — ${profile.shortRole} · Systèmes & réseaux`;
-const description = `${profile.headline}. ${profile.currentTraining}. HomeLab Proxmox/Docker, réseaux et projet NetForge. Portfolio consultable en mode sobre ou en lab 3D.`;
+const title = `${profile.fullName} — Portfolio BTS SIO SISR · ${profile.shortRole}`;
+const description = `${profile.headline}, étudiant en BTS SIO SISR à MyDigitalSchool Angers. Réalisations professionnelles et fiches E5, HomeLab Proxmox/Docker, projet NetForge. Consultable en mode sobre ou en lab 3D.`;
 
 export const metadata: Metadata = {
   title,
@@ -36,16 +39,17 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f1ec" },
-    { media: "(prefers-color-scheme: dark)", color: "#121417" },
-  ],
+  themeColor: "#0a0a0c",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <ConsentBanner />
+        {children}
+      </body>
     </html>
   );
 }

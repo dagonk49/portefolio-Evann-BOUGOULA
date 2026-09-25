@@ -71,7 +71,7 @@ export function ModeRoot({ children }: { children: ReactNode }) {
             target.focus({ preventScroll: true });
           } else {
             window.scrollTo(0, scrollY.current);
-            document.querySelector<HTMLElement>(".mode-switch")?.focus();
+            document.querySelector<HTMLElement>('[data-choice="lab-header"]:not([hidden])')?.focus();
           }
         });
       }

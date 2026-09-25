@@ -3,11 +3,15 @@
  * Next.js (`out/`) et exécuter les tests de bout en bout.
  * En production, l'image Docker utilise nginx avec les mêmes en-têtes.
  *
+ * POST /api/contact passe par le même traitement que le service d'envoi
+ * (server/handler.mjs), en envoi simulé : aucun email ne part d'ici.
+ *
  * Usage : node scripts/serve.mjs [port] [dossier]
  */
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
+import { createContactHandler, createRateLimiter } from "../server/handler.mjs";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 3000);
 const root = resolve(process.argv[3] ?? "out");
@@ -28,7 +32,16 @@ const TYPES = {
   ".m4a": "audio/mp4",
   ".ogg": "audio/ogg",
   ".webmanifest": "application/manifest+json",
+  ".pdf": "application/pdf",
 };
+
+const contact = createContactHandler({
+  to: "evann.bougoula@dagz.fr",
+  from: "preview@localhost",
+  // Prévisualisation et tests : limite large, aucune origine imposée.
+  limiter: createRateLimiter({ max: 1000 }),
+  send: async (mail) => console.log(`[contact] envoi simulé : « ${mail.subject} »`),
+});
 
 async function resolveFile(urlPath) {
   const clean = normalize(decodeURIComponent(urlPath.split("?")[0])).replace(/^(\.\.[/\\])+/, "");
@@ -46,6 +59,11 @@ async function resolveFile(urlPath) {
 }
 
 createServer(async (req, res) => {
+  if ((req.url ?? "").split("?")[0] === "/api/contact") {
+    for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+    await contact(req, res);
+    return;
+  }
   const file = await resolveFile(req.url ?? "/");
   const target = file ?? join(root, "404.html");
   try {

@@ -69,6 +69,14 @@ export function Terminal() {
     let fx: EasterEgg | undefined;
     for (const effect of result.effects) {
       if (effect.type === "open-url") openExternal(effect.url);
+      if (effect.type === "download") {
+        const a = document.createElement("a");
+        a.href = effect.url;
+        a.download = effect.filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
       if (effect.type === "fx") fx = effect.name;
       if (effect.type === "unlock-racer") {
         // Geste du visiteur : le contexte audio peut être déverrouillé ici.
@@ -176,8 +184,10 @@ export function Terminal() {
                     ? " "
                     : line.map((seg, j) => {
                         if (seg.kind === "link") {
+                          // Ancres, mailto et fichiers du site : même onglet ; liens externes : nouvel onglet.
+                          const external = /^https?:/.test(seg.href);
                           return (
-                            <a key={j} href={seg.href} target="_blank" rel="noopener noreferrer">
+                            <a key={j} href={seg.href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
                               {seg.text}
                             </a>
                           );

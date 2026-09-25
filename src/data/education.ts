@@ -1,10 +1,10 @@
 import type { Certification, Education } from "./types";
-import { SOURCE_LINKEDIN } from "./profile";
+import { SOURCE_LINKEDIN, SOURCE_V3 } from "./profile";
 
 export const education: Education[] = [
   {
     id: "bts-sio-sisr",
-    school: "MyDigitalSchool",
+    school: "MyDigitalSchool Angers",
     diploma: "BTS Services Informatiques aux Organisations",
     shortName: "BTS SIO SISR",
     specialty: "Option SISR (Solutions d'Infrastructure, Systèmes et Réseaux)",
@@ -109,5 +109,17 @@ export const certifications: Certification[] = [
     issuedAt: { year: 2026, month: 6 },
     expiresAt: { year: 2028, month: 6 },
     provenance: SOURCE_LINKEDIN,
+  },
+  {
+    id: "pix",
+    name: "Certification Pix",
+    issuer: "Lycée polyvalent Chevrollier, Angers",
+    provenance: SOURCE_V3,
+  },
+  {
+    id: "travail-hauteur",
+    name: "Sensibilisation au travail en hauteur",
+    details: "Échafaudage et PIRL (plateforme individuelle roulante légère).",
+    provenance: SOURCE_V3,
   },
 ];

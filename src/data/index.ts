@@ -5,7 +5,8 @@ import { anomalies, anomalyById } from "./anomalies";
 import { hobbies } from "./hobbies";
 import { certifications, education } from "./education";
 import { experiences } from "./experiences";
-import { LINKEDIN_URL, organizations, profile } from "./profile";
+import { CONTACT_EMAIL, CV_FILE, GITHUB_URL, LINKEDIN_URL, organizations, profile } from "./profile";
+import { e5Competences, realisations } from "./realisations";
 import { homelab, projects } from "./projects";
 import { skillById, skillFamilies, skills } from "./skills";
 import type {
@@ -15,11 +16,12 @@ import type {
   Experience,
   Hobby,
   Project,
+  Realisation,
   Skill,
   SkillFamily,
   SkillFamilyId,
 } from "./types";
-import { formatPeriod } from "@/lib/format";
+import { formatMonth, formatPeriod } from "@/lib/format";
 
 export {
   hobbies,
@@ -29,8 +31,13 @@ export {
   education,
   experiences,
   homelab,
+  CONTACT_EMAIL,
+  CV_FILE,
+  e5Competences,
+  GITHUB_URL,
   LINKEDIN_URL,
   organizations,
+  realisations,
   profile,
   projects,
   skillById,
@@ -59,6 +66,18 @@ export function getSkillFamily(id: string): SkillFamily | undefined {
 }
 export function skillsOfFamily(id: SkillFamilyId): Skill[] {
   return skills.filter((s) => s.family === id);
+}
+export function getRealisation(id: string): Realisation | undefined {
+  return realisations.find((r) => r.id === id);
+}
+/** Période lisible d'une réalisation (reprise de l'expérience liée le cas échéant). */
+export function realisationPeriod(r: Realisation): string {
+  if ("experienceId" in r.period) {
+    const e = getExperience(r.period.experienceId);
+    return e ? formatPeriod(e.period) : "";
+  }
+  if ("since" in r.period) return `depuis ${formatMonth(r.period.since)}`;
+  return r.period.label;
 }
 export function organizationName(orgId: string): string {
   return organizations[orgId]?.name ?? orgId;
@@ -111,7 +130,7 @@ export function summarize(ref: ContentRef): ContentSummary {
     case "about":
       return { ref, title: "À propos", subtitle: profile.headline, group: "Profil" };
     case "contact":
-      return { ref, title: "Contact", subtitle: "LinkedIn", group: "Contact" };
+      return { ref, title: "Contact", subtitle: `${CONTACT_EMAIL} · LinkedIn · GitHub`, group: "Contact" };
     case "homelab":
       return { ref, title: "HomeLab", subtitle: "Proxmox, Docker et environnements de test", group: "Projets" };
     case "certifications":

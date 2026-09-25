@@ -8,6 +8,8 @@ test-results/
 next-env.d.ts
 .DS_Store
 .env*.local
+server/.env
+server/node_modules/
 .shot-*.mjs
 /blob-report/
 /playwright/.cache/

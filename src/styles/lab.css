@@ -2,6 +2,8 @@
    Lab 3D : HUD, fenêtres, balises et contrôles tactiles.
    ------------------------------------------------------------------ */
 .lab-root {
+  /* Le lab garde sa typographie d'origine (IBM Plex Sans). */
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   position: fixed;
   inset: 0;
   z-index: 20;

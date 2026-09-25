@@ -1,80 +1,208 @@
-/* Impression du parcours ---------------------------------------------- */
+/* ------------------------------------------------------------------
+   Export PDF (impression du navigateur).
+   Fond blanc, encre sombre ; navigation, boutons 3D, animations, CLI,
+   formulaire et bandeau de consentement masqués. En tête : coordonnées,
+   synthèse du profil, chronologie des expériences et tableau des
+   compétences, puis les réalisations (fiches E5 dépliées, schémas).
+   `body[data-print-fiche]` : une seule fiche E5.
+   ------------------------------------------------------------------ */
 @media print {
   :root {
-    --paper: #fff;
-    --paper-2: #fff;
-    --paper-3: #f2f2f2;
-    --ink: #000;
-    --ink-2: #1a1a1a;
-    --muted: #444;
-    --line: #ccc;
-    --line-strong: #999;
-    --cyan: #000;
-    --cyan-ink: #000;
-    --cyan-soft: #eee;
-    --amber: #000;
-    --amber-soft: #eee;
+    --bg: #fff;
+    --bg-2: #fff;
+    --bg-3: #f4f4f5;
+    --fg: #0a0a0c;
+    --fg-2: #1f1f23;
+    --muted: #3f3f46;
+    --slate: #52525b;
+    --hair: #d4d4d8;
+    --hair-2: #a1a1aa;
+    --ok: #166534;
+    --ko: #991b1b;
+    --focus: #000;
+    color-scheme: light;
   }
 
   @page {
-    margin: 14mm 14mm 16mm;
+    size: A4;
+    margin: 14mm 13mm 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #0a0a0c;
   }
 
   body {
-    font-size: 10.5pt;
+    font-size: 9.8pt;
     line-height: 1.45;
-    background: #fff;
   }
 
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a {
+    color: #0a0a0c;
+    text-decoration: none;
+  }
+
+  /* Éléments d'interface sans intérêt sur papier. */
   .site-header,
   .skip-link,
   .mode-switch,
-  .hero__choices,
-  .hero__note,
-  .hero__visual,
-  .hero__kicker .patch-strip,
+  .hero,
   .section--terminal,
-  .nf-launch__preview,
-  .nf-launch__frame,
-  .nf-launch__text-btn,
+  .lab-launch,
+  .site-actions,
+  .nf-launch,
+  .contact-form,
+  .contact__side .btn,
+  .fiche__toolbar .btn,
+  .fiche__details > summary,
+  .edu__topics > summary,
+  /* Remplacés par les tableaux de l'en-tête imprimé (chronologie, compétences). */
+  .block--xp,
+  .block--skills,
   .site-footer .reset-prefs,
-  .contact__print,
+  .site-footer .linklike,
   .lab-loading,
   .lab-root,
-  .ctx-legend,
-  .tags {
+  .lab-error,
+  .consent,
+  .consent-panel,
+  .tags,
+  .case__fiche,
+  .practices a,
+  .captures__slot {
     display: none !important;
   }
 
+  .print-only {
+    display: block;
+  }
+
   .sober {
+    --indent: 0rem;
     max-width: none;
     padding: 0;
   }
 
-  .hero {
-    display: block;
-    padding: 0 0 6mm;
+  /* En-tête et tableaux propres à l'impression */
+  .print-head {
+    padding-bottom: 4mm;
+    margin-bottom: 4mm;
+    border-bottom: 1.5pt solid #0a0a0c;
   }
 
-  .hero h1 {
-    font-size: 26pt;
+  .print-head__name {
+    font-size: 22pt;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
   }
 
-  .hero__tagline {
-    border-left-color: #000;
+  .print-head__status {
+    font-size: 10.5pt;
   }
 
+  .print-head__coords {
+    margin-top: 1.5mm;
+    font-family: var(--font-mono);
+    font-size: 8.3pt;
+    color: #27272a;
+  }
+
+  .print-block {
+    margin-top: 5mm;
+    break-inside: avoid;
+  }
+
+  .print-block h2 {
+    font-size: 12pt;
+    margin-bottom: 2mm;
+  }
+
+  .print-block p + p {
+    margin-top: 1.5mm;
+  }
+
+  .print-table,
+  .synth,
+  .recette {
+    width: 100%;
+    min-width: 0 !important;
+    border-collapse: collapse;
+    font-size: 8.4pt;
+  }
+
+  .print-table th,
+  .print-table td,
+  .synth th,
+  .synth td,
+  .recette th,
+  .recette td {
+    padding: 1.4mm 1.8mm;
+    border: 0.6pt solid #a1a1aa !important;
+    text-align: left;
+    vertical-align: top;
+    color: #0a0a0c !important;
+    background: #fff !important;
+  }
+
+  .print-table thead th,
+  .synth thead th,
+  .recette thead th {
+    background: #f4f4f5 !important;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-sans);
+    font-size: 8pt;
+  }
+
+  .print-table tr,
+  .synth tr,
+  .recette tr {
+    break-inside: avoid;
+  }
+
+  .table-wrap,
+  .schema__scroll {
+    overflow: visible !important;
+    border: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+  }
+
+  .synth caption {
+    padding: 0 0 1.5mm;
+    font-size: 8pt;
+    border: 0;
+  }
+
+  .synth__comp,
+  .synth__cell {
+    width: auto;
+  }
+
+  /* Sections */
   .section {
-    padding-top: 7mm;
-  }
-
-  .section > :not(.section-head) {
-    margin-left: 0;
+    padding: 6mm 0 0;
+    border-top: 0;
   }
 
   .section-head {
-    grid-template-columns: 1fr;
+    display: block;
     margin-bottom: 3mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 0.8pt solid #0a0a0c;
   }
 
   .section-head__index {
@@ -85,80 +213,285 @@
     font-size: 15pt;
   }
 
-  .xp article,
-  .skill,
-  .edu,
-  .cert,
-  .pillar,
-  .case__grid > div {
-    break-inside: avoid;
+  .section-head__lead {
+    margin-top: 1mm;
+    font-size: 9pt;
+    color: #3f3f46;
   }
 
-  .timeline::before,
-  .xp article::before {
+  .block + .block {
+    margin-top: 5mm;
+  }
+
+  .sub-head {
+    margin-bottom: 2.5mm;
+    padding-bottom: 1mm;
+  }
+
+  .sub-head h3 {
+    font-size: 11.5pt;
+  }
+
+  .about {
+    grid-template-columns: 1fr;
+    gap: 3mm;
+  }
+
+  /* La synthèse du profil figure déjà dans l'en-tête imprimé. */
+  .about__text {
     display: none;
   }
 
-  .xp article {
-    grid-template-columns: 30mm 1fr;
-    gap: 5mm;
-    padding: 0 0 4mm;
+  .scopes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 4mm;
   }
 
-  .skill-families,
-  .edu-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 5mm;
+  .edu,
+  .hobby,
+  .lab-diagram__host,
+  .lab-node,
+  .case--secondary,
+  .practices li,
+  .docs li,
+  .comp-list li {
+    background: #fff !important;
+    border-color: #a1a1aa !important;
   }
 
-  .case {
-    border: 0;
-    padding: 0;
-  }
-
-  .edu__topics:not([open]) > :not(summary) {
-    display: block;
-  }
-
-  .edu__topics summary {
-    list-style: none;
-  }
-
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.85em;
-    color: #444;
-    word-break: break-all;
-  }
-
-  a[href^="#"] {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .contact__link {
-    border: 1px solid #000;
-  }
-
-  .nf-launch {
-    background: none;
-    color: #000;
-    border: 1px solid #000;
-    box-shadow: none;
+  .edu,
+  .cert,
+  .hobby,
+  .pillar,
+  .practices li,
+  .comp-list li,
+  .docs li,
+  .lab-diagram,
+  .schema {
     break-inside: avoid;
   }
 
-  .nf-launch__badges li,
-  .nf-launch__status {
-    color: #000;
-    background: none;
-    border-color: #000;
+  .edu__topics {
+    border-top: 0;
+    padding-top: 0;
   }
 
-  .nf-cta {
+  .hobbies {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2mm;
+  }
+
+  /* Fiches E5 : chaque fiche commence sur une nouvelle page. */
+  .fiches {
+    margin-top: 4mm;
+    border-top: 0;
+  }
+
+  .fiches > li {
+    border-bottom: 0;
+    break-before: page;
+  }
+
+  .fiche {
     padding: 0;
+  }
+
+  .fiche__head h3 {
+    font-size: 13pt;
+    max-width: none;
+  }
+
+  .fiche__summary {
+    color: #27272a;
+  }
+
+  .chips li {
+    border-color: #a1a1aa;
+    color: #0a0a0c;
+  }
+
+  .fiche__body {
+    margin-top: 3mm;
+    padding: 0;
+    border: 0;
     background: none;
-    color: #000;
-    box-shadow: none;
+    gap: 4mm;
+  }
+
+  .fiche__toolbar {
+    padding-bottom: 1.5mm;
+  }
+
+  .fiche__part h4 {
+    margin-bottom: 1.5mm;
+    font-size: 10.5pt;
+    break-after: avoid;
+  }
+
+  .comp-list,
+  .fiche__header {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5mm;
+  }
+
+  .comp-list li {
+    padding: 1.5mm 2mm;
+  }
+
+  .docs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2mm;
+  }
+
+  .captures {
+    grid-template-columns: 1fr;
+    gap: 0.8mm;
+    padding-left: 4mm;
+    list-style: disc;
+  }
+
+  .captures li {
+    display: list-item;
+  }
+
+  .captures figcaption {
+    margin: 0;
+    font-size: 8.5pt;
+  }
+
+  .schema__svg {
+    min-width: 0;
+    max-height: 88mm;
+  }
+
+  .sch-node,
+  .sch-node--strong {
+    fill: #fff;
+    stroke: #3f3f46;
+  }
+
+  .sch-node--strong {
+    stroke: #0a0a0c;
+    stroke-width: 1.4;
+  }
+
+  .sch-label {
+    fill: #0a0a0c;
+  }
+
+  .sch-sub,
+  .sch-group-label,
+  .sch-edge-label {
+    fill: #3f3f46;
+  }
+
+  .sch-edge {
+    stroke: #27272a;
+  }
+
+  .sch-arrow {
+    fill: #27272a;
+  }
+
+  .sch-group {
+    stroke: #71717a;
+  }
+
+  .sch-block circle {
+    fill: #fff;
+  }
+
+  .status {
+    border-color: #71717a;
+  }
+
+  .status--none {
+    border-color: transparent;
+  }
+
+  .fiche__foot {
+    display: none;
+  }
+
+  /* NetForge, HomeLab, compétences, contact */
+  .pillars {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .case__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+    margin-top: 3mm;
+  }
+
+  .case__grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lab-diagram__vms,
+  .lab-services {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .practices {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2mm;
+  }
+
+  .contact {
+    display: block;
+  }
+
+  .contact__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 6mm;
+  }
+
+  .contact__direct {
+    display: none;
+  }
+
+  .site-footer {
+    border-top: 0.6pt solid #a1a1aa;
+    margin-top: 6mm;
+  }
+
+  .site-footer__inner {
+    display: block;
+    padding: 2mm 0 0;
+    font-size: 7.5pt;
+  }
+
+  .site-footer__legal,
+  .site-footer__id {
+    display: none;
+  }
+
+  /* Impression d'une seule fiche E5 */
+  body[data-print-fiche] .sober > :not(.print-summary):not([data-nav="realisations"]),
+  body[data-print-fiche] .print-summary > :not(.print-head),
+  body[data-print-fiche] [data-nav="realisations"] > :not(.fiches),
+  body[data-print-fiche] .fiches > li:not([data-print-target]),
+  body[data-print-fiche] .site-footer {
+    display: none !important;
+  }
+
+  body[data-print-fiche] [data-nav="realisations"] {
+    padding-top: 0;
+  }
+
+  body[data-print-fiche] .fiches > li {
+    break-before: auto;
+  }
+
+  /* Pages légales */
+  .legal {
+    padding: 0;
+    max-width: none;
+  }
+
+  .legal__toc {
+    display: none;
   }
 }

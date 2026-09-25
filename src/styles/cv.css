@@ -1,0 +1,179 @@
+/* CV imprimable (page /cv) : document clair, format A4, une page. */
+.cv-page {
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: #e4e4e7;
+  color: #0a0a0c;
+}
+
+.cv {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 13mm 13mm 11mm;
+  background: #fff;
+  color: #0a0a0c;
+  font-family: var(--font-sans);
+  font-size: 8.6pt;
+  line-height: 1.42;
+}
+
+.cv h1 {
+  font-size: 22pt;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.cv h2 {
+  margin: 0 0 1.6mm;
+  padding-bottom: 0.8mm;
+  border-bottom: 0.7pt solid #0a0a0c;
+  font-size: 9.5pt;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cv h3 {
+  font-size: 9pt;
+  letter-spacing: -0.005em;
+}
+
+.cv h3 span {
+  font-weight: 400;
+}
+
+.cv p,
+.cv li,
+.cv dd {
+  color: #1f1f23;
+}
+
+.cv__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8mm;
+  padding-bottom: 3mm;
+  border-bottom: 1.4pt solid #0a0a0c;
+}
+
+.cv__status {
+  margin-top: 1mm;
+  font-size: 9.2pt;
+}
+
+.cv__coords {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 7.6pt;
+  line-height: 1.55;
+}
+
+.cv__profile {
+  margin-top: 3mm;
+}
+
+.cv__mobility {
+  margin-top: 1.2mm;
+}
+
+.cv__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 7mm;
+  margin-top: 4mm;
+}
+
+.cv__main,
+.cv__side {
+  display: grid;
+  align-content: start;
+  gap: 4mm;
+}
+
+.cv__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 2.2mm;
+}
+
+.cv__list > li {
+  display: grid;
+  grid-template-columns: 22mm minmax(0, 1fr);
+  gap: 2.5mm;
+  break-inside: avoid;
+}
+
+.cv__when {
+  font-family: var(--font-mono);
+  font-size: 7.4pt;
+  color: #3f3f46 !important;
+  padding-top: 0.3mm;
+}
+
+.cv__where {
+  font-family: var(--font-mono);
+  font-size: 7.3pt;
+  color: #3f3f46 !important;
+}
+
+.cv__missions {
+  margin: 0.8mm 0 0;
+  padding-left: 3.5mm;
+  display: grid;
+  gap: 0.4mm;
+}
+
+.cv__main section > p + p {
+  margin-top: 1.4mm;
+}
+
+.cv__skills {
+  margin: 0;
+  display: grid;
+  gap: 1.6mm;
+}
+
+.cv__skills dt {
+  font-weight: 600;
+}
+
+.cv__skills dd {
+  margin: 0;
+}
+
+.cv__certs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1.4mm;
+}
+
+.cv__certs li {
+  display: grid;
+}
+
+.cv__certs span {
+  font-size: 7.6pt;
+  color: #3f3f46;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  .cv-page {
+    padding: 0;
+    background: #fff;
+  }
+  .cv {
+    width: auto;
+    min-height: 0;
+  }
+}

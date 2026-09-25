@@ -133,6 +133,8 @@ export const homelab: HomeLab = {
       { id: "library", label: "Automatisations", detail: "Pour une bibliothèque privée" },
       { id: "netforge", label: "NetForge", detail: "Projet de développement" },
       { id: "portfolio", label: "Ce portfolio", detail: "Projet de développement" },
+      { id: "jellyfin", label: "Jellyfin", detail: "Serveur multimédia" },
+      { id: "staging", label: "Staging privé", detail: "Préproduction de mes projets" },
     ],
   },
   testEnvironments: [

@@ -2,8 +2,10 @@
 
 Portfolio personnel construit à partir d'une seule source de données, en deux modes :
 
-- **Mode sobre** : un portfolio éditorial en HTML statique, lisible sans JavaScript ni WebGL, pensé pour un recruteur pressé
-  (présentation, expériences, compétences contextualisées, NetForge, HomeLab, formations, certifications, loisirs, contact, terminal).
+- **Mode sobre (v3, « norme BTS SIO & conformité FR »)** : un portfolio professionnel en HTML statique, monochrome sombre,
+  lisible sans WebGL : parcours, **réalisations professionnelles et fiches E5** (tableau de synthèse, schémas, preuves,
+  documentation, cahier de recette), NetForge, HomeLab, veille et compétences, contact avec formulaire, CLI. Bandeau de
+  consentement CNIL, mentions légales, politique de confidentialité, export PDF et CV téléchargeable.
 - **Mode 3D**, deux mondes reliés par un sas :
   - **le lab** : une île-atelier explorable à pied (Three.js + React Three Fiber + Rapier). On y pousse les lettres
     « EVANN BOUGOULA », on stabilise des anomalies de code qui ouvrent de vraies fiches, et on remet le poste du lab en ligne
@@ -23,7 +25,8 @@ Prérequis : **Node.js ≥ 20.9** (testé avec Node 22) et npm.
 npm ci            # installation reproductible (package-lock.json)
 npm run dev       # développement : http://localhost:3000
 npm run build     # export statique dans out/
-npm start         # sert out/ sur http://localhost:3000 (serveur Node minimal, sans dépendance)
+npm start         # sert out/ sur http://localhost:3000 (serveur Node minimal, sans dépendance ; /api/contact en envoi simulé)
+npm run cv        # après un build : régénère public/CV_Evann_Bougoula.pdf à partir de la page /cv
 ```
 
 Vérifications :
@@ -41,12 +44,32 @@ Pour Playwright, installez un navigateur (`npx playwright install chromium`) ou 
 ## Hébergement sur la VM Docker
 
 Le site est un export statique : l'image finale est un **nginx non privilégié** qui sert `out/` sur le **port 8080**.
-Aucune variable d'environnement n'est nécessaire à l'exécution.
+Le formulaire de contact est traité par un second conteneur, **`contact`** (Node + Nodemailer, dossier `server/`), que nginx
+joint sur le réseau Docker interne via `POST /api/contact`. Le site n'a besoin d'aucune variable d'environnement ; le service
+d'envoi lit `server/.env`.
 
 ```bash
-docker compose up -d --build     # construit l'image puis lance le conteneur
+cp server/.env.example server/.env   # renseigner CONTACT_FROM et le SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS…)
+docker compose up -d --build         # construit les deux images puis lance les conteneurs
 # → http://<ip-de-la-vm>:8080
 ```
+
+Service de contact (`server/`) :
+
+| Variable | Rôle |
+| --- | --- |
+| `CONTACT_TO` | Destinataire (par défaut `evann.bougoula@dagz.fr`) |
+| `CONTACT_FROM` | Expéditeur technique autorisé par le serveur SMTP ; la réponse part vers le visiteur grâce à `Reply-To` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Serveur d'envoi (STARTTLS obligatoire si `SMTP_SECURE=0`) |
+| `ALLOWED_ORIGINS` | Origines autorisées (en-tête `Origin`), séparées par des virgules |
+| `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS` | Limitation par adresse IP (5 messages / 15 min par défaut) |
+| `CONTACT_DRY_RUN=1` | Aucun envoi réel (le sujet est journalisé, jamais le contenu) |
+
+Protections : JSON ou formulaire uniquement (415 sinon), corps limité à 32 Ko (413), contrôle de l'origine (403), champ piège
+invisible, limitation de débit (429, aussi dans nginx), validation complète côté serveur (422, mêmes règles que le navigateur :
+`server/contact-core.mjs`), caractères de contrôle retirés des champs d'une ligne (pas d'injection d'en-têtes), aucun stockage
+du message. nginx résout le service à la requête (`resolver 127.0.0.11`) : il démarre même si `contact` est arrêté, et le
+formulaire affiche alors une erreur avec l'adresse email.
 
 - `Dockerfile` : étape `build` (Node 22 Alpine, `npm ci` puis `npm run build`) → étape `runtime` (`nginxinc/nginx-unprivileged:stable-alpine`).
 - `compose.yaml` : port `8080:8080`, `restart: unless-stopped`, système de fichiers en lecture seule (`/tmp` en tmpfs),
@@ -57,7 +80,7 @@ docker compose up -d --build     # construit l'image puis lance le conteneur
   (`deploy/security-headers.inc`, identiques à `deploy/security-headers.json` utilisé par `npm start` ; un test vérifie qu'ils restent synchronisés).
 - La CSP autorise `'wasm-unsafe-eval'` (moteur physique Rapier en WebAssembly), `blob:` pour les scripts de worker
   (rendu du texte 3D) et `frame-src https://netforge.dagz.fr` pour l'aperçu en direct de NetForge, chargé **uniquement à la
-  demande** du visiteur. Aucun autre domaine externe n'est appelé.
+  demande** du visiteur ; `form-action 'self'` pour le formulaire. Aucun autre domaine externe n'est appelé.
 
 Mise à jour du contenu : modifiez `src/data/`, puis `docker compose up -d --build`.
 
@@ -65,22 +88,24 @@ Mise à jour du contenu : modifiez `src/data/`, puis `docker compose up -d --bui
 
 ```
 src/
-├─ app/                  Next.js (App Router) : layout, métadonnées, page unique
+├─ app/                  Next.js (App Router) : accueil, /mentions-legales, /confidentialite, /cv (source du PDF)
 ├─ data/                 Modèle de données central et typé (source unique des deux modes et du terminal)
 │  ├─ types.ts           Types, identifiants stables, références entre contenus, provenance interne
-│  ├─ profile.ts         Identité, présentation, contacts
+│  ├─ profile.ts         Identité, statut, mobilité, contacts (email, LinkedIn, GitHub), fichier de CV
+│  ├─ realisations.ts    Six réalisations E5 et compétences du bloc 1 (faits documentés, recette sans résultat inventé)
 │  ├─ experiences.ts     5 expériences (3 stages NET4BUSINESS distincts)
 │  ├─ education.ts       Formations et certifications
 │  ├─ skills.ts          26 compétences (intitulés d'origine conservés) et leurs contextes documentés
 │  ├─ projects.ts        NetForge (URL de production, badges), ce portfolio, HomeLab
 │  ├─ hobbies.ts         Loisirs (Valorant, Minecraft, GTA V et VI, cinéma et mécanique)
 │  └─ anomalies.ts       Anomalies des deux mondes → contenus réels (monde, zone, couleur)
-├─ components/           Mode sobre (sections), carte NetForge, terminal, bascule de mode
+├─ components/           Mode sobre (en-tête, sections, fiches E5, schémas SVG, formulaire), consentement, pages légales,
+│                        carte NetForge, terminal, bascule de mode
 ├─ terminal/             Interpréteur du terminal (pur, testé) : aucune exécution arbitraire
 ├─ sim/                  Simulation réseau pure (scénario, couches 1-3, ping, diagnostic, mission, consoles)
 ├─ state/                État partagé (zustand) : mode, monde, réglages, son, mode course, progression versionnée ; UI transitoire
 ├─ audio/                Moteur Web Audio (bus, intro, fondu, boucle synthwave générée, moteur, sons d'interface) et son hook
-├─ lib/                  IPv4, formatage de dates, stockage sûr, détections navigateur
+├─ lib/                  IPv4, formatage, stockage sûr soumis au consentement (consent.ts), impression (print.ts), navigateur
 ├─ game/                 Mode 3D, chargé à la demande
 │  ├─ LabExperience.tsx  Racine : un monde monté à la fois, changement de monde avec libération de la mémoire
 │  ├─ LoadingTransition.tsx  Écran de transition (journal des étapes réelles, jauges)
@@ -93,7 +118,9 @@ src/
 │  ├─ circuit/           Circuit : tracé et chronométrage (purs, testés), OutdoorScene, piste, paddock, spots,
 │  │                     accessoires, VehicleController (kart, stock-car), traces de pneus, ciel
 │  └─ ui/                HUD (son, tableau de bord), fenêtres accessibles, mission, index, pause, tactile
-└─ styles/               Jetons de design, mode sobre, terminal, 3D, impression
+└─ styles/               Jetons de design, mode sobre, consentement, terminal, 3D, impression, CV
+server/                  Service d'envoi du formulaire : validation partagée, handler HTTP, Nodemailer, Dockerfile
+scripts/                 serve.mjs (aperçu + /api/contact simulé), build-cv.mjs (CV PDF)
 ```
 
 Correspondance avec les noms du brief v2 : `usePortfolioStore.ts` → `src/state/app.ts` (`useApp` : `world`,
@@ -107,7 +134,7 @@ Principes :
 - **Une seule source de données** : le mode sobre, le lab (fiches, stèles, anomalies, index) et le terminal lisent `src/data`.
 - **Règles indépendantes du rendu** : la mission (`src/sim`), l'interpréteur du terminal et la sélection des points d'intérêt
   sont des fonctions pures, testées sans navigateur. Le rendu 3D ne fait que refléter l'état (voyants, câbles, flux, écran du poste).
-- **3D à la demande** : `next/dynamic` charge Three.js, R3F, drei et Rapier uniquement au clic sur « Explorer mon lab (3D) ».
+- **3D à la demande** : `next/dynamic` charge Three.js, R3F, drei et Rapier uniquement au clic sur « Basculer en 3D ».
   À la sortie, le Canvas est démonté (boucles arrêtées, contexte WebGL libéré, matériaux/géométries/textures partagés détruits).
 - **Un monde à la fois** : passer le sas démonte tout le Canvas du monde courant (monde physique compris), attend la libération
   du contexte WebGL, détruit les ressources partagées, puis monte un Canvas neuf. L'écran de transition affiche ces étapes.
@@ -197,19 +224,79 @@ lancer ou rejouer l'intro. Moteur synthétisé selon la vitesse et l'accélérat
   rend le focus au jeu si la fenêtre a été ouverte à la souris ; la proximité est recalculée aussitôt à la distance réelle
   joueur ↔ borne. Garde-fous : une stabilisation ou un changement de monde interrompu ne peut plus verrouiller le jeu.
 
+## Mode sobre v3 : norme BTS SIO et conformité française
+
+### Direction artistique
+
+Monochrome sombre inspiré des portfolios éditoriaux minimalistes : fond `#0a0a0c`, blanc cassé `#f4f4f5`, gris ardoise
+`#71717a`, filets de 1 px, ni dégradés ni bordures épaisses. Typographies **Inter** (texte) et **IBM Plex Mono** (dates,
+métadonnées, badges, code). Le gris `#71717a` n'atteint pas le contraste AA sur le fond pour du texte courant (4,1:1) : il est
+réservé aux grands index de section et aux éléments décoratifs ; les sous-titres et métadonnées utilisent `#a1a1aa` (≈ 7,7:1).
+Le lab 3D garde sa propre identité (IBM Plex Sans, palette graphite/cyan/ambre).
+
+**En-tête fixe** (`SiteHeader.tsx`) : Parcours, Réalisations & Fiches E5, NetForge, HomeLab, Veille & Compétences, Contact, CLI.
+Le lien de la section courante est souligné (`aria-current="location"`) et un filet de progression suit la lecture. Actions :
+**Basculer en 3D**, **Télécharger le CV (PDF)**, **Exporter le Portfolio (PDF)** (libellés abrégés sous 1 480 px, noms
+accessibles complets). Sous 1 180 px, la navigation passe dans un menu (Échap le referme). Les ancres utilisées par le lab 3D et
+le terminal (`#a-propos`, `#experience-…`, `#competences-…`, `#projet-…`, `#homelab`, `#contact`, `#loisir-…`) sont conservées.
+
+### Réalisations professionnelles et fiches E5
+
+`src/data/realisations.ts` décrit les six réalisations (EFS : AD et parc ; NetForge ; Ventoy ; Proxmox VE sous Debian et script ;
+Wi-Fi UniFi invités / privé ; HomeLab Proxmox et Docker). La section affiche le **tableau de synthèse** (une colonne par
+compétence du bloc 1), puis une fiche dépliable par réalisation, en sept parties : en-tête (intitulé, contexte, période, rôle),
+compétences E5 mobilisées (avec la façon dont elles le sont), description technique, **schéma SVG** (`Schemas.tsx`, schémas de
+principe, imprimables en noir sur blanc), captures et preuves, documentation (installation, exploitation / MCO, utilisateur),
+**cahier de recette** (cas testé, résultat attendu, résultat obtenu, statut OK/KO).
+
+Aucune preuve n'a été fabriquée : tant qu'Evann n'a pas fourni de capture, de document PDF ou de résultat de recette, la fiche
+l'indique (« capture non jointe », « document non joint à la version en ligne », « non consigné »). Les ajouter se fait dans
+les données (voir le guide d'édition) ; un test vérifie qu'aucun résultat n'est renseigné sans source.
+
+### Export PDF et CV
+
+- **Exporter le Portfolio (PDF)** lance l'impression du navigateur : toutes les fiches sont dépliées avant, refermées après
+  (même avec Ctrl+P). La feuille `print.css` passe en fond blanc et encre sombre, masque navigation, boutons 3D, animations,
+  CLI, formulaire et bandeau de consentement, et ajoute en tête les coordonnées, la synthèse du profil, la **chronologie des
+  expériences** et le **tableau des compétences** ; chaque fiche E5 commence sur une nouvelle page.
+- **Exporter cette fiche en PDF** (dans chaque fiche) n'imprime que la fiche concernée.
+- **CV** : `public/CV_Evann_Bougoula.pdf` est généré depuis la page `/cv` (mêmes données, une page A4) par
+  `npm run cv`. C'est un CV de travail : remplacez-le par votre propre fichier si vous en avez un (même nom).
+
+### Contact, RGPD et CNIL
+
+- **Formulaire** (`ContactForm.tsx`) : nom et prénom, entreprise ou organisation (facultatif), email professionnel, sujet,
+  message. Validation immédiate (mêmes règles que le serveur), erreurs reliées aux champs et annoncées, envoi sans rechargement,
+  états « envoi en cours », « message envoyé », « erreur » (saisie conservée et lien `mailto:` prérempli). Mention
+  d'information RGPD sous le formulaire.
+- **Consentement** (`src/lib/consent.ts`, `ConsentBanner.tsx`) : le site ne dépose aucun cookie et n'utilise aucun traceur ni
+  outil d'audience. Au premier passage, un bandeau explique la seule catégorie optionnelle (« Préférences et progression » :
+  mode, son, accessibilité, graphismes, tutoriel, progression 3D) avec trois boutons de même poids : **Tout accepter**, **Tout
+  refuser**, **Personnaliser** (aucune case précochée). Sans accord, rien n'est écrit dans le navigateur ; refuser efface ce qui
+  existait. Le choix est gardé 6 mois, les préférences 13 mois au plus. « Gérer les cookies » en pied de page rouvre le panneau.
+- **Pages légales** : `/mentions-legales` (éditeur, directeur de la publication, hébergement auto-géré sur dagz.fr, propriété
+  intellectuelle, marques citées) et `/confidentialite` (finalité exclusive, base légale, conservation 3 ans au plus, aucun
+  tiers, stockage local détaillé, droits RGPD et CNIL, CGU).
+
 ## Terminal du mode sobre
 
 Prompt `visiteur@evann:~$`. Commandes : `help`, `whoami`, `about`, `skills`, `experience`, `education`, `certifications`,
-`projects`, `netforge`, `homelab`, `contact`, `linkedin`, `cv`, `history`, `clear`, `gui`, `google`, plus quelques easter eggs
+`projects`, `realisations` (alias `e5`), `netforge`, `homelab`, `contact`, `email`, `linkedin`, `github`, `cv`, `history`,
+`clear`, `gui`, `google`, plus quelques easter eggs
 non listés par `help` (`valorant`, `minecraft`, `gta5`, `gta6`, `sudo`, et `cars`, qui débloque le mode course : réponse
 « [RACER MODE UNLOCKED] : Configuration Stock-Car validée. Rendez-vous sur le circuit extérieur pour prendre la piste. », état
 `isNascarUnlocked` mémorisé, lien « aller au circuit »).
 Insensible à la casse, historique ↑/↓, Tab complète une commande sans piéger le focus, Échap quitte le terminal.
-`google` et `linkedin` ouvrent un onglet `noopener,noreferrer` depuis le geste de validation, avec un lien de secours.
+`google`, `linkedin` et `github` ouvrent un onglet `noopener,noreferrer` depuis le geste de validation, avec un lien de secours ;
+`email` affiche l'adresse et un lien `mailto:` ; `cv` télécharge `CV_Evann_Bougoula.pdf`.
 
 ## Accessibilité
 
-- Mode sobre sémantique (titres, listes, `time`, landmarks), lien d'évitement, focus visible, contrastes vérifiés (axe, WCAG 2 AA).
+- Mode sobre sémantique (titres, listes, `time`, landmarks, tableaux avec en-têtes), lien d'évitement, focus visible,
+  contrastes vérifiés sur le thème sombre (axe, WCAG 2 AA, fiches dépliées), schémas SVG avec titre et description textuelle.
+- Formulaire : libellés visibles, champs obligatoires signalés, erreurs reliées par `aria-describedby`, focus sur le premier
+  champ à corriger, statut d'envoi en région `role="status"`. Bandeau de consentement non bloquant ; panneau en `<dialog>`
+  modal (focus piégé, Échap).
 - Fenêtres du lab : `role="dialog"`, focus piégé, Échap, retour du focus ; onglets au clavier ; états des ports en texte + symbole.
 - `prefers-reduced-motion` : animations décoratives coupées (voyants, particules, flux, rotation des anomalies), travelling instantané.
 - Le son est coupé par défaut et se règle dans Options (engrenage toujours visible, touche `O`). Aucune lecture automatique
@@ -228,9 +315,11 @@ Insensible à la casse, historique ↑/↓, Tab complète une commande sans pié
   `intro-racer.ogg` en est une conversion Opus. Sa source et ses droits n'ont pas été documentés : s'il s'agit d'un extrait d'une
   œuvre protégée, sa diffusion publique demande une autorisation. Pour le retirer, supprimez les deux fichiers : le circuit passe
   alors directement à la musique générée (voir `docs/GUIDE-EDITION.md`).
-- Polices **IBM Plex Sans / Mono** via `@fontsource` (SIL Open Font License 1.1) ; copies WOFF locales pour le texte 3D
-  dans `public/fonts/` avec la licence `OFL-IBM-Plex.txt`.
-- Bibliothèques : Next.js, React, Three.js, @react-three/fiber, @react-three/drei, @react-three/rapier (Rapier), zustand — licences MIT/Apache-2.0.
+- Polices **Inter** (`@fontsource-variable/inter`) et **IBM Plex Sans / Mono** via `@fontsource` (SIL Open Font License 1.1) ;
+  copies WOFF locales pour le texte 3D dans `public/fonts/` avec la licence `OFL-IBM-Plex.txt`.
+- Bibliothèques : Next.js, React, Three.js, @react-three/fiber, @react-three/drei, @react-three/rapier (Rapier), postprocessing,
+  zustand — licences MIT, Apache-2.0 ou zlib ; service de contact : Nodemailer (MIT-0).
+- Schémas des fiches E5 et CV : dessinés en SVG et HTML à partir des données, sans ressource externe.
 
 ## Documentation complémentaire
 

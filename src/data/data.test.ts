@@ -6,7 +6,11 @@ import {
   education,
   experiences,
   hobbies,
+  profile,
   projects,
+  realisationPeriod,
+  realisations,
+  e5Competences,
   refExists,
   skillById,
   skills,
@@ -66,7 +70,51 @@ describe("intégrité des données", () => {
   it("le BTS reste en cours, le Bac Pro est obtenu", () => {
     expect(education.find((e) => e.id === "bts-sio-sisr")?.status.kind).toBe("en-cours");
     expect(education.find((e) => e.id === "bac-pro-ciel")?.status.kind).toBe("obtenu");
-    expect(certifications).toHaveLength(3);
+    expect(certifications.map((c) => c.id)).toEqual(["habilitation-b1v", "cisco-intro-cybersecurity", "sst", "pix", "travail-hauteur"]);
+    // Pas de date supposée pour les certifications ajoutées sans date.
+    expect(certifications.find((c) => c.id === "pix")?.issuedAt).toBeUndefined();
+    expect(certifications.find((c) => c.id === "travail-hauteur")?.issuedAt).toBeUndefined();
+  });
+
+  it("coordonnées v3 : email, GitHub, LinkedIn et CV publiés", () => {
+    expect(profile.contacts.map((c) => [c.id, c.href])).toEqual([
+      ["email", "mailto:evann.bougoula@dagz.fr"],
+      ["linkedin", "https://www.linkedin.com/in/evann-bougoula"],
+      ["github", "https://github.com/dagonk49"],
+    ]);
+    expect(profile.cvFile).toBe("/CV_Evann_Bougoula.pdf");
+    expect(profile.status.join(" ")).toMatch(/EFS/);
+    expect(profile.status.join(" ")).toMatch(/MyDigitalSchool Angers/);
+    expect(profile.mobility.areas).toEqual(["Angers", "Nantes", "Ancenis", "Candé"]);
+  });
+
+  it("fiches E5 : six réalisations cohérentes, sans résultat de recette inventé", () => {
+    expect(realisations.map((r) => r.id)).toEqual(["efs-ad-parc", "netforge", "ventoy", "proxmox-debian", "unifi-wifi", "homelab"]);
+    expect(realisations.map((r) => r.number)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(e5Competences).toHaveLength(6);
+    const known = new Set(e5Competences.map((c) => c.id));
+    for (const r of realisations) {
+      expect(r.competences.length, r.id).toBeGreaterThan(0);
+      for (const c of r.competences) expect(known.has(c.id), `${r.id} → ${c.id}`).toBe(true);
+      for (const ref of r.related) expect(refExists(ref), r.id).toBe(true);
+      if ("experienceId" in r.period) expect(experiences.some((e) => e.id === (r.period as { experienceId: string }).experienceId)).toBe(true);
+      expect(realisationPeriod(r)).not.toBe("");
+      expect(r.documents.map((d) => d.kind)).toEqual(["installation", "exploitation", "utilisateur"]);
+      // Aucun résultat obtenu ni statut sans cahier de recette fourni par Evann.
+      for (const t of r.tests) {
+        expect(t.observed, `${r.id} : ${t.case}`).toBeUndefined();
+        expect(t.status, `${r.id} : ${t.case}`).toBeUndefined();
+      }
+      // Pas de capture ni de document référencé tant que le fichier n'existe pas.
+      for (const c of r.captures) expect(c.src).toBeUndefined();
+      for (const d of r.documents) expect(d.href).toBeUndefined();
+    }
+    // Texte visible uniquement (les notes éditoriales internes citent justement ces interdits).
+    const all = JSON.stringify(realisations.map(({ editorialNotes: _notes, ...visible }) => visible));
+    expect(all).not.toMatch(/PowerShell|CCNA|lorem|à compléter/i);
+    expect(all).not.toMatch(/\bN2\b/);
+    expect(all).not.toMatch(/react|next\.js|node|python|django|laravel|php/i);
+    expect(JSON.stringify(realisations.find((r) => r.id === "efs-ad-parc"))).not.toMatch(/AMI \(/);
   });
 
   it("toutes les références pointent vers un contenu existant", () => {

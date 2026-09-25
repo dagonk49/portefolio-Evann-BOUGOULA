@@ -3,11 +3,16 @@ import { formatMonth } from "@/lib/format";
 import { NetForgeLaunch } from "@/components/NetForgeLaunch";
 import { SectionHeading } from "./common";
 
-export function ProjectsSection() {
+export function NetForgeSection() {
   const nf = projects.find((p) => p.id === "netforge")!;
   return (
-    <section className="section" aria-labelledby="projets">
-      <SectionHeading id="projets" index="04" title="Projets" />
+    <section className="section" data-nav="netforge" aria-labelledby="netforge">
+      <SectionHeading
+        id="netforge"
+        index="03"
+        title="NetForge"
+        lead="Mon projet phare : une plateforme en ligne qui relie la conception d'un réseau aux commandes des équipements."
+      />
 
       <article id="projet-netforge" tabIndex={-1} className="case" aria-labelledby="projet-netforge-title">
         <header className="case__head">
@@ -22,6 +27,9 @@ export function ProjectsSection() {
         </header>
 
         <NetForgeLaunch variant="sober" />
+        <p className="case__fiche">
+          <a href="#realisation-netforge">Fiche E5 détaillée (R2) : schéma, compétences et cahier de recette</a>
+        </p>
 
         <div className="case__grid">
           <div>
@@ -88,6 +96,9 @@ export function ProjectsSection() {
 
       </article>
 
+      <h3 className="sub-title mono" id="projets">
+        Autre projet
+      </h3>
       {projects
         .filter((p) => p.id !== "netforge")
         .map((p) => (
@@ -97,22 +108,22 @@ export function ProjectsSection() {
                 {p.kind}
                 {p.since ? ` · depuis ${formatMonth(p.since)}` : ""}
               </p>
-              <h3 id={`projet-${p.id}-title`} className="case__title case__title--small">
+              <h4 id={`projet-${p.id}-title`} className="case__title case__title--small">
                 {p.name}
-              </h3>
+              </h4>
               <p className="case__tagline">{p.tagline}</p>
             </header>
             {p.problem || p.solution ? (
               <div className="case__grid case__grid--2">
                 {p.problem ? (
                   <div>
-                    <h4 className="case__label mono">Le problème</h4>
+                    <h5 className="case__label mono">Le problème</h5>
                     <p>{p.problem}</p>
                   </div>
                 ) : null}
                 {p.solution ? (
                   <div>
-                    <h4 className="case__label mono">La solution</h4>
+                    <h5 className="case__label mono">La solution</h5>
                     <p>{p.solution}</p>
                   </div>
                 ) : null}
@@ -121,7 +132,7 @@ export function ProjectsSection() {
             <div className="case__grid case__grid--2">
               {p.pillars.map((pl) => (
                 <div key={pl.id}>
-                  <h4 className="case__label mono">{pl.title}</h4>
+                  <h5 className="case__label mono">{pl.title}</h5>
                   <ul className="dash-list">
                     {pl.points.map((pt) => (
                       <li key={pt}>{pt}</li>
@@ -149,8 +160,8 @@ export function ProjectsSection() {
 
 export function HomeLabSection() {
   return (
-    <section className="section" aria-labelledby="homelab">
-      <SectionHeading id="homelab" index="05" title="HomeLab" lead={homelab.intro} />
+    <section className="section" data-nav="homelab" aria-labelledby="homelab">
+      <SectionHeading id="homelab" index="04" title="HomeLab" lead={homelab.intro} />
       <figure className="lab-diagram">
         <div className="lab-diagram__host">
           <p className="lab-node__type mono">Hyperviseur</p>
@@ -198,6 +209,9 @@ export function HomeLabSection() {
         </figcaption>
       </figure>
       <p className="lab-spirit">{homelab.spirit}</p>
+      <p className="case__fiche">
+        <a href="#realisation-homelab">Fiche E5 détaillée (R6) : schéma, compétences et cahier de recette</a>
+      </p>
     </section>
   );
 }

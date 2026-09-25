@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { enterLab, seedSettings, teleport, waitActive } from "./helpers";
+import { enterLab, launchButton, seedSettings, teleport, waitActive } from "./helpers";
 
 const BAY_PAD: [number, number] = [-19.7, 8.8];
 const PC_PAD: [number, number] = [10.45, -19.7];
@@ -126,7 +126,7 @@ test.describe("lab 3D", () => {
     await expect(page.locator("#experience-efs-2026")).toBeInViewport();
 
     // Retour au lab : l'étape 1 est toujours validée, le joueur est resté au mur du parcours.
-    await page.locator(".mode-switch").click();
+    await launchButton(page).click();
     await page.locator(".hud").waitFor({ timeout: 90_000 });
     await expect(page.locator(".hud-steps li").first()).toHaveClass(/is-done/);
     const p = await page.evaluate(() => window.__lab!.player());

@@ -7,16 +7,21 @@
  */
 import {
   certifications,
+  CONTACT_EMAIL,
+  e5Competences,
   education,
   experiences,
   homelab,
+  GITHUB_URL,
   organizationName,
   profile,
   projects,
+  realisationPeriod,
+  realisations,
   skillFamilies,
   skillsOfFamily,
 } from "@/data";
-import { formatMonth, formatPeriod } from "@/lib/format";
+import { certificationMeta, formatMonth, formatPeriod } from "@/lib/format";
 
 export type Tone = "muted" | "accent" | "ok" | "warn" | "strong";
 
@@ -32,6 +37,7 @@ export type Line = Segment[];
 export type Effect =
   | { type: "clear" }
   | { type: "open-url"; url: string }
+  | { type: "download"; url: string; filename: string }
   | { type: "enter-3d" }
   | { type: "unlock-racer" }
   | { type: "fx"; name: EasterEgg };
@@ -70,6 +76,8 @@ const out = (lines: Line[], effects: Effect[] = []): CommandResult => ({ lines, 
 export const GOOGLE_URL = "https://www.google.com";
 
 const linkedin = profile.contacts.find((c) => c.id === "linkedin");
+const MAILTO = `mailto:${CONTACT_EMAIL}`;
+const CV_NAME = "CV_Evann_Bougoula.pdf";
 
 const COMMANDS: CommandDef[] = [
   {
@@ -94,8 +102,13 @@ const COMMANDS: CommandDef[] = [
     run: () =>
       out([
         line(t(profile.fullName, "strong")),
-        line(profile.headline),
-        line(t(`${profile.location} · ${profile.currentTraining}`, "muted")),
+        ...profile.status.map((s) => line(s)),
+        line(
+          t(
+            `${profile.mobility.license}, ${profile.mobility.vehicle.toLowerCase()} · ${profile.mobility.areas.join(", ")} · ${profile.mobility.workModes.join(" ou ").toLowerCase()}`,
+            "muted",
+          ),
+        ),
         blank,
         line(t(profile.tagline, "accent")),
       ]),
@@ -167,7 +180,8 @@ const COMMANDS: CommandDef[] = [
         certifications.map((c) =>
           line(
             t(c.name, "strong"),
-            t(` — ${c.issuer}, délivrée en ${formatMonth(c.issuedAt)}${c.expiresAt ? `, expire en ${formatMonth(c.expiresAt)}` : ""}.`),
+            t(certificationMeta(c) ? ` — ${certificationMeta(c)}.` : ""),
+            ...(c.details ? [t(` ${c.details}`, "muted")] : []),
           ),
         ),
       ),
@@ -227,6 +241,7 @@ const COMMANDS: CommandDef[] = [
       out([
         line(profile.contacts.length === 1 ? `Le plus simple pour me contacter : ${profile.contacts[0]!.label}.` : "Pour me contacter :"),
         ...profile.contacts.map((c) => line(t(`  ${c.label} : `), { kind: "link", text: c.display, href: c.href })),
+        line(t("  Formulaire : ", "muted"), { kind: "link", text: "section Contact", href: "#contact" }),
       ]),
   },
   {
@@ -245,14 +260,59 @@ const COMMANDS: CommandDef[] = [
   },
   {
     name: "cv",
-    description: "mon CV",
+    aliases: ["resume"],
+    description: "télécharge mon CV (PDF)",
     run: () =>
       profile.cvFile
-        ? out([line("CV : "), line({ kind: "link", text: "Télécharger le CV", href: profile.cvFile })])
+        ? out(
+            [
+              line(`Téléchargement de ${CV_NAME}…`),
+              line(t("Rien ne s'est passé ? ", "muted"), { kind: "link", text: "Télécharger le CV (PDF)", href: profile.cvFile }),
+            ],
+            [{ type: "download", url: profile.cvFile, filename: CV_NAME }],
+          )
         : out([
             line("Aucun CV téléchargeable n'est publié pour l'instant."),
             line(t("Tu peux imprimer mon parcours (mise en page dédiée) : ", "muted"), { kind: "action", text: "imprimer", action: "print" }),
           ]),
+  },
+  {
+    name: "github",
+    aliases: ["gh", "git"],
+    description: "ouvre mon GitHub",
+    run: () =>
+      out(
+        [
+          line("Ouverture de GitHub dans un nouvel onglet…"),
+          line(t("Rien ne s'est ouvert ? ", "muted"), { kind: "link", text: "github.com/dagonk49", href: GITHUB_URL }),
+        ],
+        [{ type: "open-url", url: GITHUB_URL }],
+      ),
+  },
+  {
+    name: "email",
+    aliases: ["mail", "courriel"],
+    description: "affiche mon adresse email",
+    run: () =>
+      out([
+        line(t("Email : ", "accent"), t(CONTACT_EMAIL, "strong")),
+        line(t("Écrire un message : ", "muted"), { kind: "link", text: `mailto:${CONTACT_EMAIL}`, href: MAILTO }),
+        line(t("Ou via le formulaire : ", "muted"), { kind: "link", text: "section Contact", href: "#contact" }),
+      ]),
+  },
+  {
+    name: "realisations",
+    aliases: ["e5", "fiches", "realisation"],
+    description: "mes réalisations professionnelles (fiches E5)",
+    run: () =>
+      out([
+        line(t("Réalisations professionnelles — tableau de synthèse E5", "strong")),
+        ...realisations.map((r) =>
+          line(t(`  R${r.number}  `, "accent"), { kind: "link", text: r.title, href: `#realisation-${r.id}` }, t(` — ${realisationPeriod(r)}`, "muted")),
+        ),
+        blank,
+        line(t(`Compétences couvertes : ${e5Competences.map((c) => c.short).join(" · ")}`, "muted")),
+      ]),
   },
   {
     name: "history",
